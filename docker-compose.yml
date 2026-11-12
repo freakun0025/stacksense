@@ -1,0 +1,12 @@
+services:
+  stacksense:
+    build: .
+    image: stacksense:1.0.0
+    ports:
+      - "8000:8000"
+    environment:
+      STACKSENSE_LLM: "off"          # LLM features off (default). See README "Switching off LLM features".
+    volumes:
+      - ./outputs:/app/outputs       # JSON written by `docker compose run stacksense python stacksense.py run ...`
+      - ./scenarios:/app/scenarios
+    restart: unless-stopped
