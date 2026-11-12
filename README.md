@@ -7,7 +7,7 @@ infrastructure, compliance and priorities) into a recommended **frontend, backen
 plus the supporting services the inputs call for (cache, queue, search, auth, storage, CDN, realtime,
 payments, ML, CI/CD, observability). Every decision is made by **deterministic rules and weighted scoring
 over a curated, cited knowledge base** (238 technologies and managed offerings, 64 end-of-life records,
-286 sources), never by an LLM. Hard constraints - data residency, compliance, deployment model, cloud
+285 sources), never by an LLM. Hard constraints - data residency, compliance, deployment model, cloud
 preference - exclude non-compliant options outright; budget, timeline and priorities are traded off
 explicitly. Each component comes with a justification, the input fields that drove it (`driven_by`),
 alternatives with the reason they lost, trade-offs, an order-of-magnitude monthly cost band, and warnings
@@ -208,10 +208,14 @@ source/
 │   └── edge/                   E01-E20 edge cases + P4_pdf_variant (has_devops=false as in the PDF)
 ├── outputs/                    P1-P6_output.json and outputs/edge/*.json (engine output)
 ├── tests/test_engine.py        32 unit/property tests
-└── tools/
-    ├── fuzz.py                 property-based checks on thousands of random scenarios
-    ├── sensitivity.py          one-input-at-a-time perturbation analysis
-    └── make_edge_scenarios.py  regenerates scenarios/edge
+├── tools/
+│   ├── fuzz.py                 property-based checks on thousands of random scenarios
+│   ├── sensitivity.py          one-input-at-a-time perturbation analysis
+│   ├── make_edge_scenarios.py  regenerates scenarios/edge
+│   └── package_submission.py   assembles the StackSense26_<Name>/ submission folder
+└── report/
+    ├── screenshots.py          captures real screenshots of the running UI (headless Edge/Chrome)
+    └── build_report.py         builds Report_<Name>.pdf from live engine data and those screenshots
 ```
 
 ## 9. Validation evidence (reproducible)
@@ -226,16 +230,25 @@ The fuzz harness re-checks every chosen component against the knowledge base ind
 no hard-constraint violation, no deprecated technology, budget overruns always flagged, determinism across
 runs, no microservices for small teams, `ok` status never carries warnings.
 
+### Rebuilding the report and the submission folder
+
+```bash
+python report/build_report.py          # screenshots + validation + report/build/Report_Kunal_Mittal.pdf
+python tools/package_submission.py     # ../StackSense26_Kunal_Mittal/{source/, outputs/, Report_Kunal_Mittal.pdf}
+```
+
 ## 10. Credits - third-party libraries, datasets and APIs
 
 * **Runtime libraries:** none. Python standard library only. The UI uses no JavaScript libraries or web fonts.
 * **Optional:** [`anthropic` Python SDK](https://github.com/anthropics/anthropic-sdk-python) (MIT) for the
   off-by-default description assistant; Claude API (Anthropic).
 * **Container base image:** [`python:3.12-slim`](https://hub.docker.com/_/python).
+* **Report tooling only (not needed to run the engine):** Microsoft Edge or Google Chrome (headless screenshots and
+  PDF printing) and [Pillow](https://python-pillow.org/) for cropping screenshots.
 * **Datasets / research sources:** Stack Overflow Developer Survey 2025, State of JavaScript 2024,
   TechEmpower Framework Benchmarks, DB-Engines ranking, CNCF survey reports, endoflife.date, and the official
   documentation, pricing, region and compliance pages of every technology in the knowledge base
-  (286 links: `python stacksense.py kb --export kb.json` or the **Knowledge base** tab).
+  (285 links: `python stacksense.py kb --export kb.json` or the **Knowledge base** tab).
 * **Regulations referenced:** RBI payment-data localisation circular (2018), DPDP Act 2023, CERT-In
   Directions (2022), GDPR, HIPAA, PCI DSS, ISO/IEC 27001, SOC 2.
 * **AI assistance:** Claude Code (Anthropic) was used as a coding assistant while building this project;
