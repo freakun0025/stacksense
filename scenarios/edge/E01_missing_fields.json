@@ -1,0 +1,9 @@
+{
+  "scenario_id": "E01",
+  "project": {
+    "type": "web_app"
+  },
+  "team": {
+    "size": 2
+  }
+}

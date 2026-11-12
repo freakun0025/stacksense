@@ -1,0 +1,62 @@
+{
+  "project": {
+    "name": "ColdChain",
+    "type": "iot",
+    "description": "20,000 refrigeration sensors report temperature telemetry every 30 seconds; alerts to operators.",
+    "platforms": [
+      "web"
+    ]
+  },
+  "scale": {
+    "traffic_pattern": "steady",
+    "workload": "write_heavy",
+    "users_at_launch": 200,
+    "users_12_months": 1000,
+    "peak_concurrent_users": 20000,
+    "data_volume_gb_12_months": 3000
+  },
+  "team": {
+    "has_devops": true,
+    "size": 4,
+    "experience": "intermediate",
+    "languages": [
+      "python",
+      "typescript"
+    ]
+  },
+  "budget": {
+    "monthly_infra_usd": 1500
+  },
+  "timeline": {
+    "mvp_weeks": 10
+  },
+  "infrastructure": {
+    "cloud_preference": "aws",
+    "deployment_model": "managed_cloud",
+    "data_residency": "none",
+    "existing_systems": []
+  },
+  "requirements": {
+    "realtime": true,
+    "offline_support": false,
+    "full_text_search": false,
+    "file_media_storage": false,
+    "payments": false,
+    "auth": "email_password",
+    "multi_tenant": false,
+    "ml_features": "none",
+    "seo_critical": false,
+    "availability": "99.9",
+    "p95_latency_ms": 500
+  },
+  "compliance": [],
+  "priorities": {
+    "cost": 3,
+    "time_to_market": 3,
+    "scalability": 3,
+    "performance": 3,
+    "maintainability": 3,
+    "security": 3
+  },
+  "scenario_id": "E16"
+}

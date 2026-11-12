@@ -1,0 +1,63 @@
+{
+  "project": {
+    "name": "Launch Microsite",
+    "type": "content_site",
+    "description": "Marketing site and documentation for a product launch; static pages written in Markdown.",
+    "platforms": [
+      "web"
+    ]
+  },
+  "scale": {
+    "traffic_pattern": "spiky",
+    "workload": "read_heavy",
+    "users_at_launch": 500000,
+    "users_12_months": 2000000,
+    "peak_concurrent_users": 40000,
+    "data_volume_gb_12_months": 2
+  },
+  "team": {
+    "has_devops": false,
+    "size": 2,
+    "experience": "intermediate",
+    "languages": [
+      "javascript",
+      "html",
+      "css"
+    ]
+  },
+  "budget": {
+    "monthly_infra_usd": 50
+  },
+  "timeline": {
+    "mvp_weeks": 10
+  },
+  "infrastructure": {
+    "cloud_preference": "any",
+    "deployment_model": "managed_cloud",
+    "data_residency": "none",
+    "existing_systems": []
+  },
+  "requirements": {
+    "realtime": false,
+    "offline_support": false,
+    "full_text_search": false,
+    "file_media_storage": false,
+    "payments": false,
+    "auth": "none",
+    "multi_tenant": false,
+    "ml_features": "none",
+    "seo_critical": true,
+    "availability": "99.9",
+    "p95_latency_ms": 500
+  },
+  "compliance": [],
+  "priorities": {
+    "cost": 4,
+    "time_to_market": 3,
+    "scalability": 5,
+    "performance": 3,
+    "maintainability": 3,
+    "security": 3
+  },
+  "scenario_id": "E06"
+}

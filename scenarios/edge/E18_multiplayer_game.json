@@ -1,0 +1,63 @@
+{
+  "project": {
+    "name": "ArenaRush",
+    "type": "gaming",
+    "description": "Fast-paced multiplayer arena game with matchmaking and leaderboards.",
+    "platforms": [
+      "android",
+      "ios"
+    ]
+  },
+  "scale": {
+    "traffic_pattern": "spiky",
+    "workload": "balanced",
+    "users_at_launch": 500,
+    "users_12_months": 300000,
+    "peak_concurrent_users": 15000,
+    "data_volume_gb_12_months": 10
+  },
+  "team": {
+    "has_devops": true,
+    "size": 8,
+    "experience": "senior",
+    "languages": [
+      "csharp",
+      "go"
+    ]
+  },
+  "budget": {
+    "monthly_infra_usd": 5000
+  },
+  "timeline": {
+    "mvp_weeks": 10
+  },
+  "infrastructure": {
+    "cloud_preference": "any",
+    "deployment_model": "managed_cloud",
+    "data_residency": "none",
+    "existing_systems": []
+  },
+  "requirements": {
+    "realtime": true,
+    "offline_support": false,
+    "full_text_search": false,
+    "file_media_storage": false,
+    "payments": true,
+    "auth": "social",
+    "multi_tenant": false,
+    "ml_features": "none",
+    "seo_critical": false,
+    "availability": "99.9",
+    "p95_latency_ms": 60
+  },
+  "compliance": [],
+  "priorities": {
+    "cost": 3,
+    "time_to_market": 3,
+    "scalability": 3,
+    "performance": 5,
+    "maintainability": 3,
+    "security": 3
+  },
+  "scenario_id": "E18"
+}

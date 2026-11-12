@@ -1,0 +1,67 @@
+{
+  "project": {
+    "name": "CarePath",
+    "type": "healthtech",
+    "description": "Telemedicine visits with patient records, document uploads and video notes.",
+    "platforms": [
+      "web",
+      "ios",
+      "android"
+    ]
+  },
+  "scale": {
+    "traffic_pattern": "steady",
+    "workload": "balanced",
+    "users_at_launch": 5000,
+    "users_12_months": 80000,
+    "peak_concurrent_users": 3000,
+    "data_volume_gb_12_months": 800
+  },
+  "team": {
+    "has_devops": true,
+    "size": 6,
+    "experience": "senior",
+    "languages": [
+      "typescript",
+      "python"
+    ]
+  },
+  "budget": {
+    "monthly_infra_usd": 4000
+  },
+  "timeline": {
+    "mvp_weeks": 20
+  },
+  "infrastructure": {
+    "cloud_preference": "any",
+    "deployment_model": "managed_cloud",
+    "data_residency": "us",
+    "existing_systems": []
+  },
+  "requirements": {
+    "realtime": true,
+    "offline_support": false,
+    "full_text_search": false,
+    "file_media_storage": true,
+    "payments": false,
+    "auth": "email_password",
+    "multi_tenant": false,
+    "ml_features": "none",
+    "seo_critical": false,
+    "availability": "99.95",
+    "p95_latency_ms": 500
+  },
+  "compliance": [
+    "hipaa",
+    "soc2"
+  ],
+  "priorities": {
+    "cost": 3,
+    "time_to_market": 3,
+    "scalability": 3,
+    "performance": 3,
+    "maintainability": 3,
+    "security": 5
+  },
+  "scenario_id": "E08"
+}

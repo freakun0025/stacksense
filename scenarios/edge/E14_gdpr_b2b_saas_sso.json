@@ -1,0 +1,66 @@
+{
+  "project": {
+    "name": "Contractly",
+    "type": "saas_b2b",
+    "description": "Contract management for mid-size companies; each customer organisation signs in with its own SSO.",
+    "platforms": [
+      "web"
+    ]
+  },
+  "scale": {
+    "traffic_pattern": "steady",
+    "workload": "balanced",
+    "users_at_launch": 500,
+    "users_12_months": 20000,
+    "peak_concurrent_users": 800,
+    "data_volume_gb_12_months": 10
+  },
+  "team": {
+    "has_devops": true,
+    "size": 6,
+    "experience": "senior",
+    "languages": [
+      "typescript",
+      "python"
+    ]
+  },
+  "budget": {
+    "monthly_infra_usd": 1200
+  },
+  "timeline": {
+    "mvp_weeks": 10
+  },
+  "infrastructure": {
+    "cloud_preference": "any",
+    "deployment_model": "managed_cloud",
+    "data_residency": "eu",
+    "existing_systems": []
+  },
+  "requirements": {
+    "realtime": false,
+    "offline_support": false,
+    "full_text_search": true,
+    "file_media_storage": true,
+    "payments": true,
+    "auth": "enterprise_sso",
+    "multi_tenant": true,
+    "ml_features": "llm_rag",
+    "seo_critical": false,
+    "availability": "99.9",
+    "p95_latency_ms": 500
+  },
+  "compliance": [
+    "gdpr",
+    "soc2",
+    "iso27001"
+  ],
+  "priorities": {
+    "cost": 3,
+    "time_to_market": 3,
+    "scalability": 3,
+    "performance": 3,
+    "maintainability": 3,
+    "security": 3
+  },
+  "scenario_id": "E14"
+}

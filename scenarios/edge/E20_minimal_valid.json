@@ -1,0 +1,24 @@
+{
+  "scenario_id": "E20",
+  "project": {
+    "type": "marketplace",
+    "platforms": [
+      "web"
+    ]
+  },
+  "scale": {
+    "users_at_launch": 1000,
+    "users_12_months": 10000
+  },
+  "team": {
+    "size": 2,
+    "experience": "mixed",
+    "languages": []
+  },
+  "budget": {
+    "monthly_infra_usd": 100
+  },
+  "timeline": {
+    "mvp_weeks": 12
+  }
+}

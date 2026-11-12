@@ -1,0 +1,71 @@
+{
+  "project": {
+    "name": "LegacyRefresh",
+    "type": "saas_b2b",
+    "description": "",
+    "platforms": [
+      "web"
+    ]
+  },
+  "scale": {
+    "traffic_pattern": "steady",
+    "workload": "balanced",
+    "users_at_launch": 500,
+    "users_12_months": 5000,
+    "peak_concurrent_users": 100,
+    "data_volume_gb_12_months": 10
+  },
+  "team": {
+    "has_devops": false,
+    "size": 5,
+    "experience": "intermediate",
+    "languages": [
+      "javascript",
+      "csharp"
+    ]
+  },
+  "budget": {
+    "monthly_infra_usd": 200
+  },
+  "timeline": {
+    "mvp_weeks": 10
+  },
+  "infrastructure": {
+    "cloud_preference": "any",
+    "deployment_model": "managed_cloud",
+    "data_residency": "none",
+    "existing_systems": [
+      "Heroku (current hosting)",
+      "MySQL 5.7",
+      "Xamarin mobile app",
+      "Visual Studio App Center",
+      "Node.js 16 API",
+      "MongoDB Realm Device Sync"
+    ]
+  },
+  "requirements": {
+    "realtime": false,
+    "offline_support": false,
+    "full_text_search": false,
+    "file_media_storage": false,
+    "payments": false,
+    "auth": "email_password",
+    "multi_tenant": true,
+    "ml_features": "none",
+    "seo_critical": false,
+    "availability": "99.9",
+    "p95_latency_ms": 500
+  },
+  "compliance": [
+    "soc2"
+  ],
+  "priorities": {
+    "cost": 3,
+    "time_to_market": 3,
+    "scalability": 3,
+    "performance": 3,
+    "maintainability": 3,
+    "security": 3
+  },
+  "scenario_id": "E13"
+}

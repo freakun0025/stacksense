@@ -1,0 +1,49 @@
+{
+  "scenario_id": "E02",
+  "project": {
+    "name": 42,
+    "type": "crypto_exchange",
+    "platforms": [
+      "web",
+      "smartwatch"
+    ]
+  },
+  "scale": {
+    "users_at_launch": -10,
+    "users_12_months": "lots",
+    "traffic_pattern": "Spiky",
+    "workload": "balanced"
+  },
+  "team": {
+    "size": 0,
+    "experience": "expert",
+    "languages": "python",
+    "has_devops": "yes"
+  },
+  "budget": {
+    "monthly_infra_usd": -50
+  },
+  "timeline": {
+    "mvp_weeks": 2.5
+  },
+  "infrastructure": {
+    "cloud_preference": "AWS",
+    "deployment_model": "hybrid",
+    "data_residency": "india"
+  },
+  "requirements": {
+    "realtime": "true",
+    "availability": 99.9,
+    "auth": "magic_link",
+    "p95_latency_ms": 0
+  },
+  "compliance": [
+    "gdpr",
+    "ccpa"
+  ],
+  "priorities": {
+    "cost": 7,
+    "time_to_market": 0,
+    "security": 3.5
+  }
+}

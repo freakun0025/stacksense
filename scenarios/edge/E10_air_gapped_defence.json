@@ -1,0 +1,64 @@
+{
+  "project": {
+    "name": "FieldOps",
+    "type": "internal_tool",
+    "description": "Maintenance tracking for a defence facility with document storage and search.",
+    "platforms": [
+      "web"
+    ]
+  },
+  "scale": {
+    "traffic_pattern": "steady",
+    "workload": "balanced",
+    "users_at_launch": 800,
+    "users_12_months": 1500,
+    "peak_concurrent_users": 100,
+    "data_volume_gb_12_months": 10
+  },
+  "team": {
+    "has_devops": true,
+    "size": 6,
+    "experience": "senior",
+    "languages": [
+      "java",
+      "typescript"
+    ]
+  },
+  "budget": {
+    "monthly_infra_usd": 3000
+  },
+  "timeline": {
+    "mvp_weeks": 10
+  },
+  "infrastructure": {
+    "cloud_preference": "none",
+    "deployment_model": "air_gapped",
+    "data_residency": "none",
+    "existing_systems": []
+  },
+  "requirements": {
+    "realtime": false,
+    "offline_support": false,
+    "full_text_search": true,
+    "file_media_storage": true,
+    "payments": true,
+    "auth": "phone_otp",
+    "multi_tenant": false,
+    "ml_features": "none",
+    "seo_critical": false,
+    "availability": "99.95",
+    "p95_latency_ms": 500
+  },
+  "compliance": [
+    "iso27001"
+  ],
+  "priorities": {
+    "cost": 3,
+    "time_to_market": 3,
+    "scalability": 3,
+    "performance": 3,
+    "maintainability": 3,
+    "security": 3
+  },
+  "scenario_id": "E10"
+}
