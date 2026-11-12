@@ -1,16 +1,18 @@
-"""Builds Report_<Name>.pdf (Section 10 template) from live engine data + real UI screenshots.
+"""Builds Report_Kunal_Mittal.pdf (Section 10 template) as a LaTeX document compiled with Tectonic.
 
-    python report/build_report.py            # capture screenshots, run validation, write HTML + PDF
+    python report/build_report.py            # capture UI screenshots, run validation, write .tex, compile PDF
     python report/build_report.py --no-shots # reuse existing screenshots
 
-Needs a Chromium browser (Edge/Chrome) for screenshots and PDF printing, and Pillow for cropping.
-Every number in the report is computed here from the engine, outputs, tests, fuzz and sensitivity runs.
+Requirements (report only, not the engine): Tectonic (https://tectonic-typesetting.github.io), a Chromium
+browser for the screenshots, Pillow. Every number in the report is computed from the engine, its outputs,
+the tests, the fuzz harness and the sensitivity study; the page limits of Section 10 are verified from
+the LaTeX .aux file after compiling.
 """
 import datetime
-import html
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -29,8 +31,8 @@ import screenshots  # noqa: E402
 AUTHOR = {"name": "Kunal Mittal", "roll": "IMT2023533",
           "college": "International Institute of Information Technology Bangalore (IIIT Bangalore)",
           "email": "kunal.mittal@iiitb.ac.in", "github": "https://github.com/freakun0025/stacksense"}
-FILE_STEM = "Report_Kunal_Mittal"
-E = html.escape
+STEM = "Report_Kunal_Mittal"
+
 
 # ----------------------------------------------------------------------------------- data
 def load(rel):
@@ -48,8 +50,8 @@ def edge(prefix):
     return recommend(load(f"scenarios/edge/{name}"))
 
 
-# Rubric of acceptable / clearly-wrong choices, written from the problem statement and public reference
-# architectures BEFORE looking at engine output (kb ids). Used in Section 8.
+# Acceptable / clearly-wrong choices per public scenario (knowledge-base ids), from the brief and
+# public reference architectures. Checked automatically in Section 8.
 RUBRIC = {
     "P1": {"ok": {"frontend": {"astro", "hugo", "eleventy", "nextjs"}, "backend": {None},
                   "hosting": {"cloudflare", "netlify", "github_pages", "vercel", "firebase_hosting", "s3_cloudfront"}},
@@ -73,27 +75,18 @@ RUBRIC = {
 }
 
 
-def chosen_ids(r):
-    st = r["stack"]
-    ids = {"frontend": [c["kb_id"] for c in st["frontend"].get("components", [])],
-           "backend": [st["backend"].get("kb_id")], "database": [st["database"].get("kb_id")],
-           "hosting": [st["hosting"].get("kb_id")]}
-    allids = set(x for v in ids.values() for x in v if x)
-    allids.add(st["database"].get("offering_kb_id"))
-    allids |= {s.get("kb_id") for s in st["supporting"]}
-    return ids, allids
-
-
 def rubric_check():
     rows = []
     for sid, rule in RUBRIC.items():
-        ids, allids = chosen_ids(OUT[sid])
-        ok_layers = []
-        for layer, acc in rule["ok"].items():
-            got = ids[layer] or [None]
-            ok_layers.append((layer, any(g in acc for g in got)))
-        bad_hits = sorted(allids & rule["bad"])
-        rows.append((sid, all(v for _, v in ok_layers) and not bad_hits, ok_layers, bad_hits))
+        st = OUT[sid]["stack"]
+        ids = {"frontend": [c["kb_id"] for c in st["frontend"].get("components", [])],
+               "backend": [st["backend"].get("kb_id")], "database": [st["database"].get("kb_id")],
+               "hosting": [st["hosting"].get("kb_id")]}
+        allids = {x for v in ids.values() for x in v if x} | {st["database"].get("offering_kb_id")}
+        allids |= {s.get("kb_id") for s in st["supporting"]}
+        layers = [(layer, any(g in acc for g in (ids[layer] or [None]))) for layer, acc in rule["ok"].items()]
+        bad = sorted(allids & rule["bad"])
+        rows.append((sid, all(v for _, v in layers) and not bad, layers, bad))
     return rows
 
 
@@ -104,507 +97,671 @@ def run_tests():
     return int(m.group(1)) if m else 0, r.stderr.strip().endswith("OK")
 
 
-# ----------------------------------------------------------------------------------- helpers
-def img(name, width="100%", caption=None):
-    path = os.path.join(BUILD, "img", name + ".png")
-    cap = f"<figcaption>{caption}</figcaption>" if caption else ""
-    return f'<figure style="width:{width}"><img src="img/{name}.png">{cap}</figure>'
+# ----------------------------------------------------------------------------------- LaTeX helpers
+UNI = {"→": r"$\rightarrow$", "≥": r"$\geq$", "≤": r"$\leq$", "≈": r"$\approx$", "×": r"$\times$",
+       "−": "-", "—": "---", "–": "--", "₹": "Rs.", "…": r"\dots{}", "✔": "pass", "✘": "fail", "↔": r"$\leftrightarrow$",
+       "’": "'", "“": "``", "”": "''"}
 
 
-def table(head, rows, cls=""):
-    th = "".join(f"<th>{h}</th>" for h in head)
-    tr = "".join("<tr>" + "".join(f"<td>{c}</td>" for c in r) + "</tr>" for r in rows)
-    return f'<table class="{cls}"><thead><tr>{th}</tr></thead><tbody>{tr}</tbody></table>'
+def L(s):
+    s = str(s)
+    s = s.replace("\\", r"\textbackslash{}")
+    for a, b in (("&", r"\&"), ("%", r"\%"), ("$", r"\$"), ("#", r"\#"), ("_", r"\_"), ("{", r"\{"), ("}", r"\}"),
+                 ("~", r"\textasciitilde{}"), ("^", r"\textasciicircum{}")):
+        s = s.replace(a, b)
+    s = s.replace(r"\textbackslash\{\}", r"\textbackslash{}")
+    for a, b in UNI.items():
+        s = s.replace(a, b)
+    return s
 
 
-def code(s):
-    return f"<code>{E(str(s))}</code>"
+def tt(s):
+    return r"\texttt{" + L(s).replace(".", r".\allowbreak{}").replace(r"\_", r"\_\allowbreak{}") + "}"
 
 
-# ----------------------------------------------------------------------------------- sections
+def T(template, **kw):
+    for k, v in kw.items():
+        template = template.replace(f"@@{k}@@", str(v))
+    return template
+
+
+def fig(name, width, caption, label, pos="htbp"):
+    return (f"\\begin{{figure}}[{pos}]\n\\centering\n\\includegraphics[width={width}\\linewidth]{{img/{name}.png}}\n"
+            f"\\caption{{{caption}}}\\label{{fig:{label}}}\n\\end{{figure}}\n")
+
+
+def figpair(a, ca, la, b, cb, lb):
+    return ("\\begin{figure}[htbp]\n\\centering\n"
+            f"\\begin{{minipage}}[t]{{0.485\\linewidth}}\\centering\\includegraphics[width=\\linewidth]{{img/{a}.png}}"
+            f"\\caption{{{ca}}}\\label{{fig:{la}}}\\end{{minipage}}\\hfill\n"
+            f"\\begin{{minipage}}[t]{{0.485\\linewidth}}\\centering\\includegraphics[width=\\linewidth]{{img/{b}.png}}"
+            f"\\caption{{{cb}}}\\label{{fig:{lb}}}\\end{{minipage}}\n\\end{{figure}}\n")
+
+
+# ----------------------------------------------------------------------------------- document parts
+PREAMBLE = r"""\documentclass[11pt,a4paper]{article}
+\usepackage{fontspec}
+\usepackage[top=2.2cm,bottom=2.4cm,left=2.3cm,right=2.3cm]{geometry}
+\usepackage{graphicx,booktabs,tabularx,longtable,array,multicol,xcolor,microtype}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+\usepackage{lastpage}
+\setlist{leftmargin=1.4em,itemsep=2pt}
+\setlength{\parskip}{3pt}
+\renewcommand{\arraystretch}{1.12}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\setcounter{tocdepth}{1}
+\urlstyle{same}
+\begin{document}
+"""
+
+
 def title_page():
     a = AUTHOR
-    return f"""<section class="title">
-<div class="t-kicker">Synergy '26 · Online Systems-Design Challenge</div>
-<h1>StackSense Challenge</h1>
-<div class="t-sub">Project report · Intelligent Tech Stack Recommendation Engine</div>
-<table class="t-meta">
-<tr><th>Name</th><td>{a['name']} ({a['roll']})</td></tr>
-<tr><th>College</th><td>{a['college']}</td></tr>
-<tr><th>Unstop registered email</th><td>{a['email']}</td></tr>
-<tr><th>GitHub</th><td><a href="{a['github']}">{a['github']}</a></td></tr>
-<tr><th>Date</th><td>{datetime.date.today().strftime('%d %B %Y')}</td></tr>
-<tr><th>Engine / KB version</th><td>1.0.0 / {OUT['P1']['kb_version']}</td></tr>
-</table>
-<div class="t-note">All screenshots in this report were captured automatically from the running engine
-(<code>report/screenshots.py</code> drives headless Microsoft Edge against <code>stacksense.py serve</code>);
-all numbers are computed by <code>report/build_report.py</code> from the engine, its outputs and its test suites.</div>
-</section>"""
+    return T(r"""\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+{\large Synergy '26 \quad Online Systems-Design Challenge\par}
+\vspace{1.2cm}
+{\LARGE\bfseries StackSense Challenge\par}
+\vspace{0.4cm}
+{\Large An Explainable, Deterministic Tech Stack Recommendation Engine\par}
+\vspace{0.4cm}
+{\large Project Report\par}
+\vspace{1.4cm}
+\begin{tabular}{@{}lp{10.5cm}@{}}
+\toprule
+Name & @@name@@ (@@roll@@)\\
+College & @@college@@\\
+Unstop registered email & \texttt{@@email@@}\\
+GitHub & \url{@@github@@}\\
+Date & @@date@@\\
+\bottomrule
+\end{tabular}
+\vspace{1.4cm}
+
+\begin{minipage}{0.82\linewidth}
+\small
+\tableofcontents
+\end{minipage}
+\vfill
+{\footnotesize All screenshots were captured from the running engine; all figures and numbers in this report are
+generated from the engine, its outputs and its test suites by \texttt{report/build\_report.py}.\par}
+\end{titlepage}
+\setcounter{page}{1}
+""", name=a["name"], roll=a["roll"], college=L(a["college"]), email=a["email"], github=a["github"],
+             date=datetime.date.today().strftime("%d %B %Y"))
 
 
-def s1_abstract(st):
-    return f"""<h2>1. Abstract</h2>
-<p>StackSense is a deterministic recommendation engine that turns a project's parameters into a frontend, backend,
-database and hosting choice plus the supporting services the inputs call for, each with a justification tied to
-input fields, rejected alternatives, trade-offs, a monthly cost band and severity-graded warnings. Decisions come
-from rules and weighted scoring over a curated knowledge base of {st['total']} technologies and managed offerings,
-{st['lifecycle_entries']} end-of-life records and {st['sources']} cited sources - never from an LLM. Hard constraints
-(residency, compliance, deployment model, cloud preference) remove candidates outright, so they cannot be violated;
-budget, timeline and priorities are traded off explicitly, with an automatic cost re-plan when the floor exceeds the
-budget. It needs only Python's standard library, answers in milliseconds, and was validated with
-{st['tests']} unit tests, {st['fuzz_n']:,} randomised scenarios (0 invariant violations) and a perturbation study.</p>"""
+def s1(st):
+    return T(r"""\section{Abstract}\label{sec:start}
+StackSense recommends a frontend, backend, database and hosting platform, together with the supporting services a
+project needs, from a structured description of the project: its type, scale, team, budget, timeline, infrastructure,
+compliance obligations and priorities. Every choice is made by rules and weighted scoring over a curated knowledge base
+of @@total@@ technologies and managed offerings, @@life@@ end-of-life records and @@src@@ cited sources; no language
+model takes part in any decision. Hard constraints (data residency, compliance, deployment model, cloud preference)
+remove candidates outright, while budget, timeline and priorities are traded off explicitly, including an automatic
+re-plan when the cost floor exceeds the budget. Each component is returned with a justification tied to input fields,
+rejected alternatives, trade-offs, a monthly cost band and graded warnings. The engine runs on the Python standard library,
+answers in milliseconds, and was validated with @@tests@@ unit tests, @@fuzz@@ randomised scenarios and a perturbation study.
+""", total=st["total"], life=st["lifecycle_entries"], src=st["sources"], tests=st["tests"], fuzz=f"{st['fuzz_n']:,}")
 
 
-def s2_problem():
-    return """<h2>2. Problem understanding</h2>
-<p>The brief asks for an engine a senior engineer would trust: the right stack <em>for the constraints</em>, the right
-questions, and explanations. I read this as four engineering requirements:</p>
-<ol>
-<li><b>Constraints before popularity.</b> Data residency, compliance, deployment model and an explicit cloud choice are
-hard constraints (Section 5.3). They are implemented as filters with recorded reasons, not as score penalties, so a
-popular but non-compliant option can never win (e.g. Stripe is excluded for RBI-localised payment data; Neon, Render and
-Railway have no India region).</li>
-<li><b>Context changes the answer.</b> Team skills, experience, DevOps capacity, timeline, scale and budget shift
-weights, so a solo beginner and an eight-person senior fintech team get different stacks for similar features.</li>
-<li><b>Honesty about conflicts.</b> Logically contradictory hard constraints return <code>infeasible</code> with resolution
-options; requirements that a hard constraint makes impossible are relaxed with a <code>critical</code> warning and a
-<code>RELAXED</code> assumption; budget overruns are never silent.</li>
-<li><b>Reproducibility.</b> The engine is a pure function: no clock, randomness, network or LLM. Lifecycle dates
-are compared with a fixed knowledge-base snapshot date (13 Nov 2026), so output is byte-identical across runs and
-machines (<code>input_hash</code> lets a judge confirm the input).</li>
-</ol>
-<p><b>Scope decisions.</b> Recommendations name real, currently maintained products with a region where data lives
-(e.g. "Cloud SQL for PostgreSQL (asia-south1 Mumbai)"). Mobile and desktop clients are part of the frontend layer
-("Next.js (web) + React Native (Expo) for Android"). Missing <em>required</em> fields return
-<code>invalid_input</code> by default, with an opt-in <code>--lenient</code> mode that applies documented defaults.
-The cost band is order-of-magnitude, built from list prices per scale tier with stated assumptions.
-<b>Data note:</b> P4's <code>team.has_devops</code> is <code>false</code> in the PDF appendix but <code>true</code> in
-<code>stacksense_public_scenarios.json</code>; the JSON file is used for <code>outputs/P4_output.json</code> and the PDF
-variant is run as an extra scenario (same core stack, Section 6).</p>"""
+def s2():
+    return r"""\section{Problem understanding}
+The brief asks for recommendations that are right for the constraints, that come from the right questions, and that a
+senior engineer would accept. I read this as four requirements on the engine.
+
+\begin{enumerate}
+\item \emph{Constraints come before popularity.} Residency, compliance, deployment model and an explicit cloud choice
+are hard constraints. They are implemented as filters that record why a candidate was removed, not as penalties, so a
+popular but non-compliant option can never win. For example, Neon, Render and Railway have no Indian region, and Stripe
+is not an option for payment data that must stay in India.
+\item \emph{Context changes the answer.} Team languages and experience, DevOps capacity, timeline, scale and budget all
+change the weights, so a solo beginner and an eight-person senior fintech team receive different stacks for similar
+features.
+\item \emph{Conflicts are reported, not hidden.} Contradictory hard constraints yield the status \texttt{infeasible}
+with resolution options; requirements that a hard constraint makes impossible are relaxed with a critical warning and an
+assumption that names the relaxation; a budget overrun is never silent.
+\item \emph{Results are reproducible.} The engine is a pure function of its input: no clock, randomness, network access
+or language model. Lifecycle dates are compared with a fixed knowledge-base date (13 November 2026), so the same input
+always produces byte-identical JSON.
+\end{enumerate}
+
+Recommendations name real, currently maintained products together with the region where data lives, for example
+``Cloud SQL for PostgreSQL (asia-south1 Mumbai)''. Mobile and desktop clients are part of the frontend layer. A file
+with missing required fields returns \texttt{invalid\_input} by default; an opt-in lenient mode applies documented
+defaults instead. The cost estimate is an order-of-magnitude band built from list prices per scale tier, with every
+assumption stated. One data note: P4's \texttt{team.has\_devops} is \texttt{false} in the PDF appendix but \texttt{true}
+in \texttt{stacksense\_public\_scenarios.json}. The JSON file is used for the official output and the PDF variant is run
+as an additional scenario; both give the same core stack.
+"""
 
 
-def s3_architecture():
+def s3():
     rows = [
-        ("schema.py, validate.py", "Field catalogue (type, enum, default, help, affected decisions); field-level validation, never raises; defaults recorded as assumptions"),
-        ("describe.py, profile.py", "Deterministic phrase lexicon for the description (suggestions, engine signals, mismatch warnings); derived profile: scale tier, peak concurrency and req/s, DB vs media GB, effort vs capacity, region"),
-        ("conflicts.py", "Pre-flight infeasibility; relaxation of impossible requirements; 57 warning rules; lifecycle scan of existing systems"),
-        ("kb/ (clients, server, supporting, lifecycle, sources)", "Knowledge base: scores, regions, attestations, prices, limits, sources, status"),
-        ("scoring.py", "hard_exclusion() and reusable soft factors (priorities, skills, learning, ops, scale, lock-in, budget, reuse)"),
-        ("select_core.py, select_support.py", "Layer logic: frontend (web/mobile/desktop), backend, DB engine, hosting, managed DB offering; supporting capabilities and providers"),
-        ("cost.py, architecture.py", "Monthly cost band and breakdown; architecture style with over-engineering guard"),
-        ("explain.py, recommend.py", "Justification, driven_by, why-not, trade-offs, decision trace; orchestration, budget re-plan, status"),
-        ("stacksense.py, server.py, web/", "CLI (run, batch, validate, describe, kb, serve); zero-dependency HTTP API; vanilla-JS UI"),
-        ("llm.py (optional)", "Off by default; suggests description fields only; never imported by the engine"),
+        ("schema.py, validate.py", "Field catalogue (type, enum, default, help text, affected decisions) and field-level validation; defaults are recorded as assumptions."),
+        ("describe.py, profile.py", "Deterministic phrase lexicon for the free-text description; derived profile (scale tier, peak concurrency and request rate, database vs.\\ media volume, effort vs.\\ capacity, region)."),
+        ("conflicts.py", "Pre-flight infeasibility checks, relaxation of impossible requirements, 57 warning rules, lifecycle scan of existing systems."),
+        ("kb/", "Knowledge base: scores, regions, attestations, prices, limits, lifecycle status and sources."),
+        ("scoring.py", "Hard-constraint filter and reusable soft factors."),
+        ("select\\_core.py, select\\_support.py", "Per-layer selection: frontend (web, mobile, desktop), backend, database engine, hosting, managed database offering, supporting services."),
+        ("cost.py, architecture.py", "Monthly cost band with breakdown; architecture style with an over-engineering guard."),
+        ("explain.py, recommend.py", "Justifications, \\texttt{driven\\_by}, reasons for rejected alternatives, trade-offs, decision trace; orchestration and status."),
+        ("stacksense.py, server.py, web/", "Command-line interface, dependency-free HTTP API and browser UI."),
     ]
-    return f"""<h2>3. System architecture</h2>
-<div class="flow">
-<div><b>Input</b><span>JSON file · web form · HTTP POST</span></div><i>→</i>
-<div><b>1 Validate</b><span>types, enums, ranges, defaults</span></div><i>→</i>
-<div><b>2 Profile</b><span>tier, req/s, data, effort, region, signals</span></div><i>→</i>
-<div><b>3 Pre-flight</b><span>infeasible? relax impossible requirements</span></div><i>→</i>
-<div><b>4 Select</b><span>filter hard constraints, score factors, rank</span></div><i>→</i>
-<div><b>5 Cost</b><span>band + re-plan if over budget</span></div><i>→</i>
-<div><b>6 Explain</b><span>style, warnings, why-not, trace</span></div><i>→</i>
-<div><b>Output</b><span>Section 4 JSON · UI · file</span></div>
-</div>
-<p><b>Data flow.</b> A scenario is validated against the schema (every problem becomes a <code>validation_errors</code>
-entry; absent optional fields get documented defaults recorded in <code>assumptions</code>). The profile derives the
-quantities that drive sizing and cost and is itself logged (estimated peak concurrency, data split). The pre-flight
-stage detects logically incompatible hard constraints (<code>infeasible</code>) and relaxes requirements that a hard
-constraint forbids. Layers are then selected in dependency order - frontend → backend (aware of client languages) →
-database engine (aware of BaaS coupling) → hosting (aware of runtime, WebSockets, SSR) → managed DB offering (same
-platform/region) → supporting services (aware of all of the above). Cost is estimated from the selected components;
-if the floor exceeds the budget the whole plan is recomputed with cost weighted at 5 and the cheaper plan is kept.
-Finally the architecture style, warnings and explanations are generated from the recorded factors.</p>
-{table(["Module", "Responsibility"], [(code(a), b) for a, b in rows], "compact")}
-<p><b>Technology.</b> Python 3.9+ standard library only (developed on 3.11.5): <code>json</code>, <code>http.server</code>,
-<code>argparse</code>, <code>re</code>, <code>hashlib</code>, <code>unittest</code>. Web UI: HTML/CSS/vanilla JavaScript
-with no framework or build step. Optional Docker image (<code>python:3.12-slim</code>). Optional <code>anthropic</code>
-SDK only for the off-by-default description assistant.</p>"""
+    body = "\n".join(f"\\texttt{{{a}}} & {b}\\\\" for a, b in rows)
+    return r"""\section{System architecture}
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[node distance=4mm, box/.style={draw, rounded corners=1pt, align=center, font=\footnotesize,
+  minimum height=11mm, text width=19mm, inner sep=2pt}, >=Stealth]
+\node[box] (in) {Scenario\\JSON / form};
+\node[box, right=of in] (v) {Validate\\\scriptsize types, defaults};
+\node[box, right=of v] (p) {Profile\\\scriptsize tier, load, region};
+\node[box, right=of p] (pf) {Pre-flight\\\scriptsize infeasible?};
+\node[box, right=of pf] (s) {Select\\\scriptsize filter + score};
+\node[box, below=7mm of s] (c) {Cost\\\scriptsize band, re-plan};
+\node[box, left=of c] (e) {Explain\\\scriptsize warnings, trace};
+\node[box, left=of e] (o) {Output JSON\\UI / file};
+\node[box, left=of o, dashed] (k) {Knowledge\\base};
+\draw[->] (in) -- (v); \draw[->] (v) -- (p); \draw[->] (p) -- (pf); \draw[->] (pf) -- (s);
+\draw[->] (s) -- (c); \draw[->] (c) -- (e); \draw[->] (e) -- (o);
+\draw[->, dashed] (k.north) |- ([yshift=-3mm]s.south west) -- ([yshift=-3mm]s.south west);
+\end{tikzpicture}
+\caption{Processing pipeline. Every stage is deterministic; the knowledge base is read-only data.}
+\label{fig:pipeline}
+\end{figure}
+
+A scenario is first validated against the schema: every problem becomes a \texttt{validation\_errors} entry, and absent
+optional fields receive documented defaults that are recorded in \texttt{assumptions}. The profile stage derives the
+quantities that drive sizing and cost (estimated peak concurrency, requests per second, database and media volume) and
+logs every estimate. The pre-flight stage detects logically incompatible hard constraints and relaxes requirements that
+a hard constraint forbids. Layers are then selected in dependency order: frontend, backend (aware of client languages),
+database engine (aware of backend-as-a-service coupling), hosting (aware of runtime, WebSockets and server rendering),
+managed database offering (same platform and region as the hosting), and finally the supporting services. Cost is
+estimated from the selected components; if the floor exceeds the budget, the whole plan is recomputed with cost weighted
+at the maximum priority and the cheaper plan is kept. Finally the architecture style, warnings and explanations are
+generated from the factors recorded during scoring. Table~\ref{tab:modules} lists the modules.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Modules of the engine (package \texttt{stacksense\_engine}).}\label{tab:modules}
+\begin{tabularx}{\linewidth}{@{}P{4.6cm}Y@{}}
+\toprule
+Module & Responsibility\\
+\midrule
+""" + body + r"""
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The engine is written in Python 3.9+ using only the standard library (\texttt{json}, \texttt{http.server},
+\texttt{argparse}, \texttt{re}, \texttt{hashlib}, \texttt{unittest}); the UI is plain HTML, CSS and JavaScript with no
+framework or build step. A Docker image based on \texttt{python:3.12-slim} is provided as an alternative way to run it.
+"""
 
 
-def s4_inputs():
-    mand = [f for f in FIELDS if not f["extra"]]
+def s4():
+    mand = [f for f in FIELDS if not f["extra"] and not f["path"].startswith("priorities.")]
     extra = [f for f in FIELDS if f["extra"]]
 
     def rule(f):
         k = f["kind"]
         if k in ("enum", "list_enum"):
-            r = "one of " + ", ".join(f["enum"][:6]) + ("…" if len(f["enum"]) > 6 else "")
-        elif k == "priority":
-            r = "integer 1-5"
+            r = "enum (" + str(len(f["enum"])) + " values)"
         elif k in ("int", "number", "int_or_null"):
-            r = ("integer" if k != "number" else "number") + (f" ≥ {f['minimum']}" if f["minimum"] is not None else "") \
+            r = ("integer" if k != "number" else "number") + (f" $\\geq$ {f['minimum']}" if f["minimum"] is not None else "") \
                 + (" or null" if k == "int_or_null" else "")
         elif k == "bool":
             r = "boolean"
         else:
             r = "string" if k == "str" else "list of strings"
-        req = "required" if f["required"] else f"default {json.dumps(f['default'])}" if f["default"] is not None else "optional"
-        return f"{r}; {req}"
-    prio_rows = [f for f in mand if f["path"].startswith("priorities.")]
-    mand_rows = [f for f in mand if not f["path"].startswith("priorities.")]
-    rows = [(code(f["path"]), E(f["help"]), E(", ".join(f["affects"])), E(rule(f))) for f in mand_rows]
-    rows.append((code("priorities.*") + " (6 keys)", "Weights the matching score dimension of every candidate "
-                 "(cost, time-to-market, scalability, performance, maintainability, security)", "all layers",
-                 "integer 1-5; default 3"))
-    xrows = [(code(f["path"]), E(f["help"]), E(", ".join(f["affects"]))) for f in extra]
-    return f"""<h2>4. Input design and research</h2>
-<p>The UI and API accept every field of Section 3.1 with exactly the specified names and enum values; one schema
-module drives validation, the form (labels, help text, "→ affects" hints) and this table. Each field is listed with why
-it matters architecturally, the decisions it changes and its validation rule.</p>
-{table(["Field", "Why it matters architecturally", "Decisions affected", "Validation"], rows, "inputs")}
-<h3>4.1 Additional parameters (StackSense extras)</h3>
-<p>Ten optional parameters capture drivers the standard schema misses. The engine works when they are absent
-(defaults or inference from other fields), and each one demonstrably changes the recommendation:</p>
-{table(["Extra field", "What it captures and how it changes the stack", "Affects"], xrows, "inputs")}
-<p>Examples: <code>vendor_lock_in_tolerance=low</code> applies a −2.2 penalty to proprietary BaaS/datastores
-(Firebase, DynamoDB, Cosmos DB) and moves them out of first place; <code>existing_licences=["aws_credits"]</code> adds
-+1.0 to AWS hosting; <code>user_geography</code> places the primary region next to users when no residency is
-given; <code>rpo_minutes&lt;5</code> rejects offerings without point-in-time recovery.</p>
-<h3>4.2 Validation rules</h3>
-<ul>
-<li><b>Types</b> are checked strictly (a boolean is not an integer; <code>"true"</code> is not a boolean;
-<code>availability</code> must be the string <code>"99.9"</code>), integral floats such as <code>2000.0</code> are accepted.</li>
-<li><b>Ranges</b>: non-negative counts and money, <code>team.size ≥ 1</code>, <code>mvp_weeks ≥ 1</code>,
-<code>p95_latency_ms &gt; 0</code> or null, priorities 1-5.</li>
-<li><b>Enums</b> are exact lower-case values; unknown values report the allowed set and a Levenshtein "did you mean"
-hint (<code>"AWS"</code> → did you mean <code>"aws"</code>). Lists are de-duplicated (noted).</li>
-<li><b>Missing fields</b>: required → <code>invalid_input</code> listing every missing field (or documented defaults
-with <code>--lenient</code>); optional → default recorded in <code>assumptions</code>.</li>
-<li><b>Unknown fields</b> are ignored and reported (info); language aliases (<code>C#</code>, <code>golang</code>,
-<code>JS</code>) are normalised and noted.</li>
-<li><b>Contradictions</b> (Section 7) are warnings with severity, not validation errors, because the input is
-well-formed: e.g. peak concurrency above total users, <code>api_only</code> mixed with UI platforms, SEO without a web
-platform, 99.99% with a solo beginner, scope versus team capacity.</li>
-</ul>
-<p><b>Description parsing.</b> A deterministic lexicon (≈40 patterns) reads <code>project.description</code>: it suggests
-structured values in the UI ("Apply" to accept) and extracts engine signals - GPS/geo (PostGIS), ledger (strict ACID),
-low-end devices, poor networks (resumable uploads), KYC (KMS-encrypted storage), CRDT/presence, Markdown content - each
-shown in <code>driven_by</code> as <code>project.description</code>. Mismatches ("mentions chat but realtime=false")
-become info warnings; structured fields always win.</p>
-<p><b>Research behind the inputs.</b> Thresholds come from documented platform limits and pricing: e.g. Amazon RDS
-single-AZ SLA (99.5%) vs Multi-AZ (99.95%) drives the HA standby decision; Cloud Run's 60-minute WebSocket timeout and
-best-effort affinity drive the stateful-room penalty; Postgres FTS is preferred below the large tier; the effort model
-(feature points vs team-weeks × experience factor) flags unrealistic timelines.</p>
-{img("configure", "74%", "Figure 1 - Input form (real UI): every field shows its schema path, help text and the decisions it affects; live validation on the right.")}"""
+        if f["required"]:
+            return r + "; required"
+        if f["default"] is not None:
+            return r + "; default " + L(json.dumps(f["default"]))
+        return r + "; optional"
+    rows = "\n".join(f"{tt(f['path'])} & {L(f['help'])} & {L(', '.join(f['affects']))} & {rule(f)}\\\\" for f in mand)
+    rows += "\n" + (r"\texttt{priorities.*} (6) & Weight of the matching score dimension (cost, time to market, "
+                    r"scalability, performance, maintainability, security) for every candidate. & all layers & integer 1--5; default 3\\")
+    xrows = "\n".join(f"{tt(f['path'])} & {L(f['help'])} & {L(', '.join(f['affects']))}\\\\" for f in extra)
+    return r"""\section{Input design and research}
+The engine accepts every field of Section~3.1 of the brief with exactly the specified names and enumerations. A single
+schema module drives validation, the input form and Table~\ref{tab:inputs}, which states for each field why it matters
+architecturally, which decisions it influences and how it is validated.
+
+{\footnotesize
+\begin{longtable}{@{}P{3.7cm}P{6.3cm}P{2.6cm}P{2.6cm}@{}}
+\caption{Mandatory input fields.}\label{tab:inputs}\\
+\toprule
+Field & Architectural role & Affects & Validation\\
+\midrule
+\endfirsthead
+\toprule
+Field & Architectural role & Affects & Validation\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+""" + rows + r"""
+\end{longtable}}
+
+\subsection{Additional parameters}
+Ten optional parameters capture drivers that the standard schema does not (Table~\ref{tab:extras}). The engine behaves
+sensibly when they are absent, using defaults or inference from other fields. Each of them changes the recommendation:
+a low lock-in tolerance moves proprietary platforms such as Firebase, DynamoDB and Cosmos DB out of first place;
+existing cloud credits favour hosting on that cloud; the users' geography places the primary region next to them when
+no residency is given; and a recovery point objective below five minutes rejects offerings without point-in-time recovery.
+
+{\footnotesize
+\begin{longtable}{@{}P{4.6cm}P{8.0cm}P{2.6cm}@{}}
+\caption{Additional input parameters.}\label{tab:extras}\\
+\toprule
+Field & What it captures & Affects\\
+\midrule
+\endfirsthead
+\toprule
+Field & What it captures & Affects\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+""" + xrows + r"""
+\end{longtable}}
+
+\subsection{Validation rules}
+Types are checked strictly: a boolean is not an integer, the string \texttt{"true"} is not a boolean, and
+\texttt{availability} must be one of the listed strings, while integral floats such as \texttt{2000.0} are accepted.
+Counts and money must be non-negative, \texttt{team.size} and \texttt{mvp\_weeks} at least one, the latency target
+positive or null, and priorities between 1 and 5. Enumerations are matched exactly; an unknown value reports the allowed
+set and, where close enough, a suggestion (\texttt{"AWS"} produces \emph{did you mean "aws"?}). Duplicate list entries
+are removed and noted, unknown fields are ignored but reported, and common language aliases (\texttt{C\#},
+\texttt{golang}) are normalised. Contradictions between well-formed fields, such as peak concurrency above the total
+number of users or SEO without a web platform, are reported as warnings rather than validation errors (Section~\ref{sec:edges}).
+
+The free-text description is read by a deterministic lexicon of about forty patterns. It proposes structured values in
+the UI, which the user must accept explicitly, and it extracts signals the engine can use: location data (PostGIS),
+double-entry ledgers (strict ACID transactions), low-end devices, unreliable networks (resumable uploads), KYC
+documents (encrypted private storage) and concurrent editing (CRDTs). Where the description contradicts a structured
+field, an informational warning is raised and the structured field wins.
+
+Thresholds in the engine come from documented platform behaviour. Amazon RDS offers a 99.5\% SLA for single-zone and
+99.95\% for Multi-AZ deployments~\cite{rds_sla}, which decides when a standby is needed; Cloud Run caps WebSocket
+connections at 60 minutes and offers only best-effort affinity~\cite{cloudrun_ws}, which matters for stateful rooms;
+PostgreSQL full-text search~\cite{pg_fts} is preferred over a dedicated search cluster below the large scale tier; and
+an effort model (feature points against team-weeks scaled by experience) flags unrealistic timelines.
+""" + fig("configure", "0.78", "Input form of the web UI. Each field shows its schema path, help text and the decisions it affects; validation runs live.", "configure")
 
 
-def s5_kb(st):
-    layers = st["active_by_layer"]
-    kbrows = [("Web frameworks", layers.get("web", 0)), ("Mobile / desktop", layers.get("mobile", 0) + layers.get("desktop", 0)),
-              ("Backends & BaaS", layers.get("backend", 0)), ("Database engines", layers.get("database", 0)),
-              ("Managed DB offerings", layers.get("db_offering", 0)), ("Hosting platforms", layers.get("hosting", 0)),
-              ("Supporting services", sum(v for k, v in layers.items() if k not in
-                                          ("web", "mobile", "desktop", "backend", "database", "db_offering", "hosting"))),
-              ("Deprecated/EOL entries (never chosen)", st["inactive_entries"]), ("Lifecycle registry", st["lifecycle_entries"]),
-              ("Cited sources", st["sources"])]
-    hard = [
-        ("data_residency (+ RBI ⇒ India)", "Every component that stores/processes personal data needs a region in that jurisdiction; managed services without location control (Firebase Auth, Cloudflare Workers) are excluded"),
-        ("compliance", "Vendor must hold the attestation/BAA for layers in that regime's scope (HIPAA: data stores, compute, logs; PCI: payments + data path; RBI: India region + payment data; GDPR/DPDP: DPA for every processor)"),
-        ("deployment_model", "managed_cloud excludes self-run VMs/DBs; self_hosted_cloud_vm forces VM hosting and self-run data services; on_premise/air_gapped allow only self-hostable software, on-prem hosting, no SaaS/CDN"),
-        ("cloud_preference", "aws/gcp/azure exclude other clouds' services and third-party PaaS for infrastructure (multi-cloud SaaS deployed on that cloud, e.g. MongoDB Atlas, allowed); none = no public cloud"),
-        ("lifecycle", "Deprecated, EOL, maintenance-mode or closed-to-new services are never recommended and are explained as alternatives when relevant"),
-    ]
-    return f"""<h2>5. Knowledge base and decision logic</h2>
-<h3>5.1 Representation</h3>
-<p>Each technology is a record with 1-5 scores for <i>performance, scalability, time-to-market, maintainability, cost
-efficiency, security</i>, plus <i>learning curve</i>, <i>operational burden</i> and <i>maturity</i>; skill languages and
-platforms; traits (e.g. <code>ssr</code>, <code>websockets</code>, <code>multi_az</code>, <code>offline_capable</code>,
-<code>acid</code>, <code>rls</code>); provider, self-hostability, data regions, compliance attestations, lock-in level,
-scale comfort limits (<code>users_max</code>/<code>users_min</code> for over-engineering), a five-tier price table,
-strengths, limits, lifecycle status and source ids. Managed database offerings are separate records (33) so the engine
-chooses the engine <em>and</em> where it runs. Current-state research is encoded explicitly: AWS App Runner closed to
-new customers (30 Apr 2026), Heroku in sustaining-engineering mode (Feb 2026), MinIO archived (Feb 2026), Azure Cache for
-Redis creation blocked (Apr 2026), Atlas Device Sync EOL (Sep 2025), Create React App deprecated (Feb 2025), .NET 8/9 EOL
-(Nov 2026), the Feb 2026 Indian ISP block of supabase.co, and India-region availability per provider.</p>
-<div class="two">{table(["Knowledge base", "Entries"], kbrows, "compact")}
-{img("kb", "100%", "Figure 2 - Knowledge-base explorer in the UI (search, scores, regions, attestations, lifecycle, sources).")}</div>
-<h3>5.2 Hard constraints → filters</h3>
-{table(["Constraint", "How it is enforced (candidate excluded, reason recorded)"], hard, "compact")}
-<h3>5.3 Soft constraints → weighted factors</h3>
-<p>Remaining candidates are scored as a sum of explicit factors, each storing its input fields, weight and sentence:</p>
-<div class="formula">score = Σ<sub>d∈priorities</sub> w·(p<sub>d</sub>/3)·(s<sub>d</sub>−3) + skill fit + learning fit + ops fit
-+ maturity + scale fit + lock-in + reuse of existing systems + budget fit + layer-specific requirement fit</div>
-<ul>
-<li><b>Skill fit</b>: full match +w, close language (TypeScript↔JavaScript, Kotlin↔Java) partial, none −0.9w, where
-w grows for beginners (2.6) vs seniors (1.4), for timelines ≤ 6 weeks and with the time-to-market priority.</li>
-<li><b>Operations</b>: without DevOps each point of operational burden above 2 costs 0.9 (small teams); Kubernetes is
-additionally penalised for teams under six without DevOps. <b>Scale fit</b>: penalties above a technology's comfort
-ceiling and over-engineering penalties below its useful floor (e.g. Kubernetes below 1M users, Cassandra below 2M).</li>
-<li><b>Budget fit</b>: a component whose own floor cost exceeds its share of the budget is penalised logarithmically.
-If the whole plan's floor still exceeds the budget, the engine re-plans with cost weighted at 5 and keeps the cheaper
-plan; any remaining overrun is a <code>BUDGET_EXCEEDED</code> warning plus a <code>RELAXED</code> assumption.</li>
-<li><b>Requirement fit</b> per layer, e.g. SEO → SSR/SSG (+1.6) or penalty for client-only rendering (−2.5);
-realtime → persistent-connection runtimes and WebSocket-capable hosting; offline → on-device SQLite clients; ledger →
-ACID; same-platform bonus for the DB offering and supporting services; sticky routing for stateful rooms.</li>
-</ul>
-<h3>5.4 Ties, conflicts and determinism</h3>
-<p>Ranking is by score (rounded to 3 decimals), then maturity, then id, so ties resolve identically every time; a
-margin under 0.8 is shown as "close call". Layers are chosen in dependency order, and a later layer's needs are
-expressed as factors rather than overrides (e.g. a database engine with no compliant managed offering falls back to the
-next engine, recorded in assumptions). Determinism is guaranteed by construction (no clock, random, network, set
-iteration or LLM; lifecycle compared to the fixed KB date) and verified by tests that compare output across repeated
-runs, separate processes, shuffled key order and the LLM switch.</p>
-<h3>5.5 LLM usage declaration and LLM-off switch</h3>
-<p><b>No LLM chooses or ranks anything.</b> The only LLM use is an optional "Suggest with AI" button for the description
-field (Section 5.1 use #1). It is <b>off by default</b> (<code>STACKSENSE_LLM=off</code>); <code>--no-llm</code> forces it
-off; the UI shows "LLM: off"; the engine never imports the module; every output carries <code>"llm_used": false</code>.
-The deterministic lexicon provides the same assistance without any model.</p>"""
+def s5(st):
+    lay = st["active_by_layer"]
+    sup = sum(v for k, v in lay.items() if k not in ("web", "mobile", "desktop", "backend", "database", "db_offering", "hosting"))
+    kbrows = [("Web frameworks", lay.get("web", 0)), ("Mobile and desktop", lay.get("mobile", 0) + lay.get("desktop", 0)),
+              ("Backends and BaaS", lay.get("backend", 0)), ("Database engines", lay.get("database", 0)),
+              ("Managed database offerings", lay.get("db_offering", 0)), ("Hosting platforms", lay.get("hosting", 0)),
+              ("Supporting services", sup), ("Deprecated / end-of-life entries", st["inactive_entries"]),
+              ("Lifecycle registry records", st["lifecycle_entries"]), ("Cited sources", st["sources"])]
+    kb_tab = "\n".join(f"{a} & {b}\\\\" for a, b in kbrows)
+    return r"""\section{Knowledge base and decision logic}
+\subsection{Representation}
+Each technology is a record with scores from 1 to 5 for performance, scalability, time to market, maintainability, cost
+efficiency and security, plus learning curve, operational burden and maturity. It also stores the programming
+languages a team needs, supported platforms, traits (for example \texttt{ssr}, \texttt{websockets}, \texttt{multi\_az},
+\texttt{offline\_capable}, \texttt{acid}), the provider, whether it can be self-hosted, the regions where data can be
+kept, compliance attestations, lock-in level, the scale range in which it is sensible, a price table for five scale
+tiers, strengths, limitations, lifecycle status and source references. Managed database offerings are separate records,
+so the engine chooses both the engine and where it runs. Recent changes are encoded explicitly: AWS App Runner closed
+to new customers in April 2026~\cite{apprunner}, Heroku moved to sustaining engineering in February
+2026~\cite{heroku}, the MinIO community repository was archived~\cite{minio}, creation of Azure Cache for Redis is
+blocked~\cite{azure_cache}, Atlas Device Sync reached end of life~\cite{atlas}, and \texttt{supabase.co} was blocked by
+several Indian ISPs in February 2026~\cite{supabase_block}. Table~\ref{tab:kb} summarises the contents.
 
+\begin{table}[htbp]
+\centering\small
+\begin{minipage}[t]{0.36\linewidth}\centering
+\caption{Knowledge base.}\label{tab:kb}
+\begin{tabular}{@{}lr@{}}
+\toprule
+Category & Entries\\
+\midrule
+""" + kb_tab + r"""
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.6\linewidth}\centering
+\vspace{0pt}\includegraphics[width=\linewidth]{img/kb.png}
+\captionof{figure}{Knowledge-base explorer in the UI.}\label{fig:kb}
+\end{minipage}
+\end{table}
 
-def s6_samples():
-    rows = []
-    for sid, r in OUT.items():
-        st, c = r["stack"], r["estimated_monthly_cost_usd"]
-        band = f"${c['min']:,}" if c["min"] == c["max"] else f"${c['min']:,}-{c['max']:,}"
-        rows.append((f"<b>{sid}</b>", E(r["architecture_style"]), E(st["frontend"]["choice"]), E(st["backend"]["choice"]),
-                     E(st["database"]["choice"]), E(st["hosting"]["choice"]), band, E(r["status"])))
-    p2, p4 = OUT["P2"], OUT["P4"]
-    sup2 = ", ".join(f"{s['layer']}: {s['choice']}" for s in p2["stack"]["supporting"][:6])
-    p4var = edge("P4_pdf")
-    same4 = all(p4var["stack"][k]["choice"] == p4["stack"][k]["choice"] for k in ("frontend", "backend", "database", "hosting"))
-    return f"""<h2>6. Sample recommendations</h2>
-{table(["", "Style", "Frontend", "Backend", "Database", "Hosting", "Cost/mo", "Status"], rows, "results")}
-<div class="grid2">{img("P1_overview", "100%", "P1 - static Astro on a free CDN; no backend, no database, $0")}
-{img("P2_overview", "100%", "P2 - India-resident marketplace within a $150 budget")}
-{img("P3_overview", "100%", "P3 - hybrid: API + stateful collaboration servers in the EU (GDPR)")}
-{img("P4_overview", "100%", "P4 - RBI/PCI fintech on AWS Mumbai")}
-{img("P5_overview", "100%", "P5 - .NET monolith on Azure India reusing Entra ID and M365")}
-{img("P6_overview", "100%", "P6 - offline-first Android on a BaaS in Mumbai")}</div>
-<h3>6.1 Walk-through: P2 Home-services marketplace (India)</h3>
-<p><b>Constraints that shaped it.</b> <code>data_residency=india</code> + DPDP removed every component without an India
-region before scoring: Render, Railway, Fly.io (Mumbai in its consolidation list), Neon, Upstash, Algolia, Auth0 and
-Clerk; Firebase was excluded because Firebase Authentication offers no data-location choice; Stripe is excluded for
-India-resident payment data (invite-only onboarding), so payments went to an RBI-authorised gateway (Razorpay, with UPI
-and payouts to providers).
-<b>Frontend.</b> <code>seo_critical=true</code> rewards server rendering (+1.6) and the Android app shares React/TypeScript
-with the web (+1.0), giving <b>Next.js + React Native (Expo)</b>; Flutter loses on skills (no Dart).
-<b>Backend.</b> Django (Python) narrowly beats NestJS (8.8 vs 8.3, labelled a close call): both match the team, Django
-wins on batteries (admin for provider vetting, auth) while the marketplace domain penalises BaaS (Supabase 7.6).
-<b>Data &amp; hosting.</b> PostgreSQL (relational marketplace data, built-in full-text search for 15 GB at this scale - no
-search cluster) on <b>Cloud SQL Mumbai</b> beside <b>Cloud Run Mumbai</b> (scale-to-zero, WebSockets, no DevOps).
-To respect <code>priorities.cost=4</code> the DB runs single-zone and the engine says so (<code>DB_SINGLE_ZONE</code>
-warning: ~99.5% SLA vs the 99.9% target; HA standby roughly doubles that line).
-<b>Supporting.</b> {E(sup2)}; MSG91 sends DLT-registered OTPs inside India (Twilio excluded by residency).
-<b>Cost</b> ${p2['estimated_monthly_cost_usd']['min']}-{p2['estimated_monthly_cost_usd']['max']}/month - the floor is
-within the $150 budget, the upper end is flagged (<code>BUDGET_HEADROOM</code>).</p>
-{img("P2_core", "74%", "Figure 3 - P2 core stack: justification, driven_by fields, alternatives with why-not (incl. hard-constraint exclusions) and trade-offs.")}
-<h3>6.2 Walk-through: P4 Digital lending and payments (India)</h3>
-<p><b>Hard constraints.</b> <code>cloud_preference=aws</code> + <code>rbi_localisation</code>, <code>pci_dss</code>,
-<code>dpdp</code>, <code>iso27001</code> + India residency: only AWS services in ap-south-1 (or self-run software) survive;
-payments must be an RBI-authorised Indian aggregator with PCI DSS (Razorpay; Stripe and Paddle excluded).
-<b>Backend.</b> <b>Spring Boot</b> matches the Java/Kotlin team and earns the ledger signal from the description
-("double-entry ledger" → declarative ACID transactions, +0.8) and structure for a fintech domain; the security priority (5)
-rewards its track record. <b>Clients.</b> React Native (Expo) covers Android + iOS from the team's TypeScript, and a React
-web app shares it. <b>Data.</b> PostgreSQL on <b>Amazon RDS Multi-AZ</b> (HA standby because availability is 99.95%;
-DynamoDB/MongoDB lose on multi-row ACID for a ledger). <b>Hosting.</b> <b>ECS on Fargate</b> across AZs; EKS is
-penalised as over-engineering for 300k users; Lambda and Amplify are excluded because a long-running Spring Boot service
-needs containers.
-<b>Supporting.</b> SageMaker endpoint for the credit-scoring model (IAM, registry, audit), SQS for disbursal/EMI
-workflows, S3 with KMS for KYC documents, Spring Security with SNS SMS OTP (per-MAU identity fees avoided at 300k
-users), WAF + KMS + CloudTrail/GuardDuty for PCI/ISO auditors, CloudWatch in-region (CERT-In 180-day logs).
-<b>Cost</b> ${p4['estimated_monthly_cost_usd']['min']:,}-{p4['estimated_monthly_cost_usd']['max']:,}/month vs $6,000. The
-PDF-appendix variant (<code>has_devops=false</code>) yields {"the same core stack" if same4 else "a different core stack"},
-since every choice is already fully managed.</p>
-{img("P4_support", "70%", "Figure 4 - P4 supporting services chosen under AWS + RBI + PCI DSS + DPDP + ISO 27001.")}"""
+\subsection{Hard constraints}
+Hard constraints are applied as filters before any scoring. A candidate that violates one is excluded, and the reason
+is kept so that it can appear among the alternatives and in the decision trace.
+\begin{itemize}
+\item \emph{Data residency.} Every component that stores or processes personal data must offer a region in the
+required jurisdiction; services without location control, such as Firebase Authentication~\cite{firebase_loc}, are
+excluded. RBI localisation implies Indian residency~\cite{rbi}.
+\item \emph{Compliance.} The vendor must hold the relevant attestation or sign a BAA, but only for layers within that
+regime's scope: HIPAA covers data stores, compute and logs; PCI DSS covers payments and the data path; GDPR and DPDP
+require a data-processing agreement from every processor.
+\item \emph{Deployment model.} Managed cloud excludes self-run virtual machines and databases; self-hosted VMs require
+VM hosting; on-premise and air-gapped deployments allow only self-hostable software and no SaaS or CDN.
+\item \emph{Cloud preference.} An explicit provider excludes other clouds' services and third-party platforms for
+infrastructure; \texttt{none} means no public cloud.
+\item \emph{Lifecycle.} Deprecated, end-of-life, maintenance-mode and closed-to-new-customer services are never recommended.
+\end{itemize}
 
+\subsection{Soft constraints and scoring}
+The remaining candidates are scored as a sum of explicit factors. Each factor stores the input fields that caused it,
+its weight and a sentence, which later become the justification and the \texttt{driven\_by} list:
+\begin{equation*}
+\mathrm{score}(c) = \sum_{d \in D} w\,\frac{p_d}{3}\,(s_{c,d}-3) + F_{\mathrm{skill}} + F_{\mathrm{learn}} + F_{\mathrm{ops}}
+ + F_{\mathrm{scale}} + F_{\mathrm{lock}} + F_{\mathrm{reuse}} + F_{\mathrm{budget}} + F_{\mathrm{req}},
+\end{equation*}
+where $D$ are the six priority dimensions, $p_d$ the user's priority and $s_{c,d}$ the knowledge-base score. The skill
+factor rewards a full language match and partially rewards a close one (TypeScript and JavaScript, Kotlin and Java);
+its weight is larger for beginners than for senior teams and grows for short timelines. Without a DevOps engineer,
+each point of operational burden above two is penalised, and Kubernetes is penalised further for small teams. The
+scale factor penalises technologies used beyond their comfortable range and also below the scale at which they pay off,
+which keeps Kubernetes, Cassandra and microservices away from small projects. A component whose own floor cost exceeds
+its share of the budget is penalised logarithmically. Requirement factors are layer-specific: server rendering for SEO,
+persistent connections for realtime features, on-device storage for offline support, ACID transactions for ledgers, and
+a preference for supporting services on the same platform and region as the hosting.
 
-def s7_edges():
-    rows = [
-        ("Missing fields", "Required field absent → error per field; optional absent → default", "<code>invalid_input</code>, stack null, every missing field listed (E01); <code>--lenient</code> applies documented defaults; optional defaults listed in assumptions (E20)", "E01, E20"),
-        ("Invalid values", "Strict type/range/enum checks, never raises", "22 field errors in one pass with allowed values and \"did you mean\" (E02); garbage input (null, list, string) handled", "E02"),
-        ("Contradictions", "Pre-flight (hard vs hard) + 57 rules (budget floor, availability vs team, effort vs capacity, latency, platforms)", "<code>infeasible</code> + resolution options (E09 RBI vs EU residency, E15 no-cloud vs managed); <code>critical</code> warnings + RELAXED assumptions (E03 5M users on $0 with a solo beginner, E04, E05)", "E03, E04, E05, E09, E15"),
-        ("Over-engineering traps", "users_min floors, team-size/DevOps guard, static eligibility", "2M-user marketing site stays static on a CDN (E06); 40-person internal tool → one Django app (E07); microservices never for &lt;25 engineers", "E06, E07"),
-        ("Regulatory constraints", "Compliance scopes + residency filters", "Only BAA-covered vendors for PHI (E08); RBI-authorised gateway, India-only data (P4); EU-region IdP for GDPR SSO (E14); explicit notes (SCCs, PCI SAQ-A, CERT-In)", "P2, P4, E08, E14"),
-        ("Existing systems", "Alias matching + reuse bonus + integration rules", "Entra ID reused for SSO, M365 via Graph, on-prem SQL Server 2019 kept as system of record via App Service Hybrid Connection (P5); AD federated through Keycloak LDAP (E11)", "P5, E11"),
-        ("Restricted deployment", "Self-host/on-prem filters; impossible requirements relaxed", "Air-gapped: Spring Boot + self-managed PostgreSQL + on-prem RKE2, Keycloak, SeaweedFS, GitLab, Prometheus; payments and phone OTP relaxed with critical warnings; no CDN (E10)", "E10, E11"),
-        ("Skill mismatch", "Experience-weighted skill factor + SKILL_MISMATCH warning", "PHP+JS team building live auctions gets NestJS + Socket.IO instead of a popular Go/Elixir realtime stack; any chosen language outside the team is warned (E12, E04)", "E12"),
-        ("Deprecated technology", "64-entry lifecycle registry + status on KB entries", "Never recommended; existing EOL items warned (critical under SOC 2 etc.): Heroku, MySQL 5.7, Xamarin, App Center, Node 16, Realm Sync (E13); SQL Server 2019 extended-support note (P5)", "E13, P5"),
-    ]
-    return f"""<h2>7. Edge-case handling</h2>
-{table(["Category (Section 6)", "Detection", "Engine behaviour", "Scenario"], rows, "compact")}
-<div class="grid2">{img("E09_infeasible", "100%", "E09 - contradictory hard constraints → infeasible with resolution options")}
-{img("E10_notes", "100%", "E10 - air-gapped: impossible requirements relaxed with critical warnings")}
-{img("E13_notes", "100%", "E13 - end-of-life existing systems flagged")}
-{img("E03_notes", "100%", "E03 - 5M users, $0 budget, solo beginner: critical warnings + relaxed assumptions")}</div>
-<p class="small">More edge-case screenshots (E01, E02, E05, E06, E08, E11, E12, E20, P5) are in Appendix A; all edge-case
-outputs are in <code>outputs/edge/</code>.</p>"""
+\subsection{Ties, conflicts and determinism}
+Candidates are ranked by score rounded to three decimals, then by maturity, then by identifier, so ties are resolved the
+same way every time; a margin below 0.8 is labelled a close call. Layers are chosen in dependency order, and later
+requirements are expressed as factors rather than overrides. If the best database engine has no compliant managed
+offering, the next engine is used and the fallback is recorded. Determinism follows from the construction (no clock,
+randomness, network, unordered iteration or language model) and is checked by tests that compare repeated runs, separate
+processes, shuffled key order and both settings of the LLM switch.
 
-
-def s8_validation(st):
-    rub = rubric_check()
-    rrows = [(sid, "✔ pass" if ok else "✘ check", ", ".join(f"{l}{'' if v else ' ✘'}" for l, v in layers),
-              ", ".join(bad) or "none") for sid, ok, layers, bad in rub]
-    passed = sum(1 for r in rub if r[1])
-    sens = st["sens"]
-    return f"""<h2>8. Validation</h2>
-<p><b>Rubric review.</b> For each public scenario I defined, from the brief and public reference architectures, the
-choices a senior engineer would accept per layer and a list of clearly wrong ones (e.g. Stripe or a US-only PaaS for P4,
-Kubernetes for P1). The rubric is encoded in <code>report/build_report.py</code> and checked automatically: {passed}/6 pass.</p>
-{table(["Scenario", "Result", "Layers within the acceptable set", "Clearly-wrong choices present"], rrows, "compact")}
-<p><b>Comparison with real systems.</b> P3 matches how production whiteboards work: Figma runs stateful per-document
-multiplayer servers next to a conventional API, and Excalidraw relays edits over WebSockets - the engine's hybrid
-style with a Go WebSocket gateway, Yjs CRDT and sticky routing follows that pattern. P5 matches Microsoft's basic web
-application reference (App Service + Azure SQL + Entra ID). P6 matches ODK Collect, the open-source standard for NGO
-field surveys: an offline-first Android client with local storage that syncs forms and media when connectivity
-returns. P4 follows RBI's payment-data localisation circular (2018) and the PCI DSS scope-reduction practice of hosted
-checkout/tokenisation.</p>
-<p><b>Automated checks.</b> <b>{st['tests']} unit tests</b> ({'all passing' if st['tests_ok'] else 'see log'}) cover the schema,
-validation errors, determinism (repeat runs, fresh process, key order, LLM switch), public-scenario expectations
-(India regions, cloud preference, RBI gateway, Entra reuse) and every edge category. A <b>property-based fuzz harness</b>
-generated {st['fuzz_n']:,} random scenarios and re-checked every chosen component against the knowledge base
-independently of the engine: <b>{st['fuzz_fail']} violations</b> of hard constraints, determinism, silent budget overruns,
-deprecated choices or the over-engineering guard (about {st['fuzz_ms']} ms per recommendation on a laptop).
-A <b>perturbation study</b> changed one input at a time ({sens['perturbations']} changes on P1-P6): {sens['with_no_core_change']}
-left the core stack unchanged, on average {sens['avg_core_decisions_moved']} core decisions moved, and every larger move
-was a sensible reaction (e.g. P3 realtime off → hybrid becomes a modular monolith; SEO on → Next.js; P1 adding payments →
-a serverless backend appears).</p>
-{img("P3_whatif", "84%", "Figure 5 - What-if in the UI: P3 with requirements.realtime=false; the diff shows exactly which decisions moved.")}"""
-
-
-def s9_limits():
-    return """<h2>9. Limitations and future work</h2>
-<ul>
-<li><b>Scores are expert judgement.</b> The 1-5 scores and factor weights are curated from cited docs, surveys and
-benchmarks, not fitted to outcome data. Future: calibrate weights against labelled stack decisions (e.g. public
-case studies) with a small learning-to-rank model, keeping the factor explanations.</li>
-<li><b>Cost model is tiered.</b> It uses five scale tiers and unit prices, not a full calculator; regional price
-differences and negotiated discounts are ignored. Future: per-region price tables refreshed from provider pricing APIs.</li>
-<li><b>Knowledge freezes.</b> Service status changes quickly (App Runner, Heroku, MinIO all changed in 2026). The KB has a
-snapshot date and a lifecycle registry, but needs periodic refresh; a scheduled job could diff endoflife.date.</li>
-<li><b>One stack per layer.</b> Polyglot designs (e.g. a separate realtime service in another language) are expressed in
-the architecture rationale and supporting services rather than as multiple backends.</li>
-<li><b>Close calls are real.</b> Some layers (P2 backend, P6 BaaS vs functions) have small margins; they are labelled
-"close call" with both options explained, but a team's preference should decide.</li>
-</ul>"""
-
-
-def s10_refs():
-    key = ["so2025", "stateofjs", "techempower", "dbengines", "endoflife", "cncf", "rds_sla", "rds_pg_pricing",
-           "cloudrun_ws", "cloudrun_pricing", "fargate_pricing", "supabase_regions", "supabase_block", "neon_regions",
-           "render_regions", "railway_regions", "fly_consolidation", "apprunner_change", "heroku_sustaining", "minio_repo",
-           "azure_cache_retire", "atlas_app_services", "cra_sunset", "dotnet_policy", "sqlserver2019", "firebase_locations",
-           "stripe_india", "razorpay_security", "rbi_localisation", "dpdp", "certin", "pci", "hipaa", "gdpr",
-           "figma_multiplayer", "excalidraw_e2e", "appservice_hybrid", "yjs", "postgis", "pg_fts"]
-    items = "".join(f"<li>{E(SOURCES[k]['title'])} - <a href=\"{E(SOURCES[k]['url'])}\">{E(SOURCES[k]['url'])}</a></li>"
-                    for k in key if k in SOURCES)
-    extra = [("ODK Collect documentation (offline-first field data collection)", "https://docs.getodk.org/collect-intro/"),
-             ("Azure Architecture Center - Basic web application", "https://learn.microsoft.com/azure/architecture/web-apps/app-service/architectures/basic-web-app")]
-    items += "".join(f'<li>{E(t)} - <a href="{u}">{u}</a></li>' for t, u in extra)
-    return f"""<h2>10. References and third-party tools</h2>
-<p><b>Libraries:</b> none at runtime (Python standard library; vanilla JavaScript; no web fonts). <b>Optional:</b>
-<code>anthropic</code> Python SDK (MIT) for the off-by-default description assistant. <b>Build/report tooling:</b>
-Pillow (screenshot cropping) and Microsoft Edge headless (screenshots, PDF). <b>Container:</b> Docker image
-<code>python:3.12-slim</code>. <b>Datasets:</b> Stack Overflow Developer Survey 2025, State of JS 2024, TechEmpower
-benchmarks, DB-Engines, CNCF reports, endoflife.date. <b>APIs:</b> Anthropic Claude API (optional only).
-The knowledge base cites {len(SOURCES)} sources (official docs, pricing, region, compliance and lifecycle pages);
-the full list is in Appendix B and in the UI. Key references:</p>
-<ol class="refs">{items}</ol>"""
-
-
-def s11_ai():
-    return """<h2>11. AI assistance declaration</h2>
-<p>I used <b>Claude Code (Anthropic)</b> extensively as an AI pair-programmer during the challenge window. It generated
-most of the code (engine, knowledge-base entries, web UI, tests, Docker and report tooling), drafted the README and this
-report, and carried out web research on current service status, regions and pricing, which is cited in the knowledge
-base. I set the goals and constraints, reviewed the recommendation for every public and edge scenario, asked for changes
-where a choice was not defensible, and decided what to keep. No LLM is used by the engine at runtime to choose or rank
-any component (Section 5.5).</p>"""
-
-
-def appendix_a():
-    pairs = [("E01_missing", "E01 - required fields missing: invalid_input listing each field"),
-             ("E05_notes", "E05 - four platforms in three weeks: timeline infeasible"),
-             ("E06_overview", "E06 - 2M-user launch site kept static (over-engineering trap)"),
-             ("E11_notes", "E11 - AWS preference vs on-premise: precedence + relaxation; EOL SQL Server 2016"),
-             ("E20_notes", "E20 - minimal valid file: documented defaults"),
-             ("about", "How-it-works page in the UI")]
-    wide = [("E02_invalid", "E02 - 22 field-level validation errors in one pass", "78%"),
-            ("P5_notes", "P5 - existing Entra ID, Microsoft 365 and on-prem SQL Server reused", "80%"),
-            ("E08_core", "E08 - HIPAA healthtech: only BAA-covered services", "74%"),
-            ("E12_core", "E12 - skill mismatch handled by weighting the team's languages", "74%"),
-            ("P2_trace", "P2 - decision trace: every candidate's score, top factors and exclusion reasons", "80%"),
-            ("P2_cost", "P2 - cost breakdown and assumptions", "72%"),
-            ("P2_support", "P2 - supporting services", "74%"),
-            ("P4_core", "P4 - core stack", "74%")]
-    grid = "".join(img(n, "100%", c) for n, c in pairs)
-    big = "".join(img(n, w, c) for n, c, w in wide)
-    return f'<section class="appendix"><h2>Appendix A - Additional screenshots</h2><div class="grid2">{grid}</div>{big}</section>'
-
-
-def appendix_b():
-    items = "".join(f"<li>{E(s['title'])} <span>{E(s['url'])}</span></li>" for s in sorted(SOURCES.values(), key=lambda s: s["title"].lower()))
-    return f'<section class="appendix"><h2>Appendix B - Knowledge-base sources ({len(SOURCES)})</h2><ol class="srclist">{items}</ol></section>'
-
-
-CSS = """
-@page { size: A4; margin: 14mm 14mm 16mm 14mm;
-  @bottom-center { content: "StackSense - Kunal Mittal (IMT2023533) - page " counter(page); font: 8pt system-ui, sans-serif; color: #667; } }
-@page :first { @bottom-center { content: none; } }
-* { box-sizing: border-box; }
-body { font: 9.6pt/1.42 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; color: #111827; margin: 0; }
-h1 { font-size: 30pt; margin: 0 0 4mm; color: #0b3b5c; letter-spacing: -.02em; }
-h2 { font-size: 14pt; color: #0b3b5c; border-bottom: 1.5px solid #0b3b5c; padding-bottom: 1mm; margin: 6mm 0 2.5mm; break-after: avoid; }
-h3 { font-size: 11pt; color: #0b3b5c; margin: 4mm 0 1.5mm; break-after: avoid; }
-p, li { margin: 0 0 2mm; text-align: justify; }
-ul, ol { padding-left: 5mm; margin: 0 0 2mm; }
-code { font: 8.4pt Consolas, "Cascadia Mono", monospace; background: #eef2f7; padding: 0 2px; border-radius: 2px; }
-a { color: #1d4ed8; text-decoration: none; }
-table { border-collapse: collapse; width: 100%; margin: 1.5mm 0 3mm; font-size: 8.4pt; break-inside: auto; }
-th { background: #0b3b5c; color: #fff; text-align: left; padding: 1.2mm 1.6mm; font-weight: 600; }
-td { border-bottom: 1px solid #dfe5ee; padding: 1.1mm 1.6mm; vertical-align: top; }
-tr { break-inside: avoid; }
-table.inputs td:nth-child(1) { width: 25%; } table.inputs td:nth-child(3) { width: 17%; } table.inputs td:nth-child(4) { width: 19%; }
-table.inputs { font-size: 7.9pt; } table.inputs code { font-size: 7.6pt; }
-table.results { font-size: 7.8pt; }
-figure { margin: 2mm auto 3mm; break-inside: avoid; }
-figure img { width: 100%; border: 1px solid #cfd8e3; border-radius: 3px; display: block; }
-figcaption { font-size: 7.8pt; color: #4b5563; margin-top: 1mm; text-align: center; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
-.two { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 4mm; align-items: start; }
-.flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 1.2mm; margin: 2mm 0 3mm; }
-.flow div { flex: 1 1 0; min-width: 18mm; background: #eef4fb; border: 1px solid #b9cde3; border-radius: 2mm; padding: 1.5mm; font-size: 7.6pt; }
-.flow div b { display: block; color: #0b3b5c; font-size: 8.2pt; }
-.flow i { align-self: center; color: #0b3b5c; font-style: normal; font-weight: 700; }
-.formula { background: #f3f6fa; border-left: 3px solid #0b3b5c; padding: 2mm 3mm; margin: 2mm 0 3mm; font-size: 9pt; }
-.small { font-size: 8.4pt; color: #4b5563; }
-.title { height: 262mm; display: flex; flex-direction: column; justify-content: center; break-after: page; }
-.t-kicker { color: #b45309; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: 10pt; margin-bottom: 4mm; }
-.t-sub { font-size: 14pt; color: #4b5563; margin-bottom: 10mm; }
-.t-meta { width: 140mm; font-size: 10.5pt; } .t-meta th { background: none; color: #0b3b5c; width: 48mm; border-bottom: 1px solid #e5e7eb; }
-.t-meta td { font-size: 10.5pt; }
-.t-note { margin-top: 12mm; font-size: 8.6pt; color: #4b5563; max-width: 150mm; }
-.appendix { break-before: page; }
-.refs li { font-size: 8.2pt; margin-bottom: .8mm; text-align: left; word-break: break-all; }
-.srclist { columns: 2; column-gap: 6mm; font-size: 6.9pt; padding-left: 6mm; }
-.srclist li { margin: 0 0 .6mm; text-align: left; break-inside: avoid; }
-.srclist span { color: #6b7280; word-break: break-all; }
-.s11 { break-before: avoid; }
+\subsection{Use of language models}
+No language model chooses or ranks any component. The only LLM feature is an optional button that suggests form values
+from the description, which is permitted use (1) of Section~5.1 of the brief. It is off by default
+(\texttt{STACKSENSE\_LLM=off}), can be forced off with \texttt{-{}-no-llm}, is shown as ``LLM: off'' in the UI, and is never
+imported by the engine; every output contains \texttt{"llm\_used": false}.
 """
 
 
-def build_html(st, main_only=False):
-    body = [title_page(), s1_abstract(st), s2_problem(), s3_architecture(), s4_inputs(), s5_kb(st), s6_samples(),
-            s7_edges(), s8_validation(st), s9_limits(), s10_refs()]
-    if not main_only:
-        body += [s11_ai(), appendix_a(), appendix_b()]
-    return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>StackSense - Report - Kunal Mittal</title>
-<style>{CSS}</style></head><body>{''.join(body)}</body></html>"""
+def s6():
+    rows = []
+    for sid, r in OUT.items():
+        st, c = r["stack"], r["estimated_monthly_cost_usd"]
+        band = f"\\${c['min']:,}" if c["min"] == c["max"] else f"\\${c['min']:,}--{c['max']:,}"
+        rows.append(f"{sid} & {L(r['architecture_style'].replace('_', ' '))} & {L(st['frontend']['choice'])} & "
+                    f"{L(st['backend']['choice'])} & {L(st['database']['choice'])} & {L(st['hosting']['choice'])} & {band}\\\\")
+    p2, p4 = OUT["P2"], OUT["P4"]
+    c2, c4 = p2["estimated_monthly_cost_usd"], p4["estimated_monthly_cost_usd"]
+    p4var = edge("P4_pdf")
+    same4 = all(p4var["stack"][k]["choice"] == p4["stack"][k]["choice"] for k in ("frontend", "backend", "database", "hosting"))
+    return r"""\section{Sample recommendations}
+Table~\ref{tab:results} summarises the engine's output for the six public scenarios; the complete JSON files are in
+\texttt{outputs/}. Figures~\ref{fig:p1}--\ref{fig:p6} show the result view for each scenario.
+
+\begin{table}[htbp]
+\centering\scriptsize
+\caption{Recommendations for the public scenarios.}\label{tab:results}
+\begin{tabularx}{\linewidth}{@{}lP{1.6cm}YYYYr@{}}
+\toprule
+ & Style & Frontend & Backend & Database & Hosting & Cost / month\\
+\midrule
+""" + "\n".join(rows) + r"""
+\bottomrule
+\end{tabularx}
+\end{table}
+""" + figpair("P1_overview", "P1: static Astro site on a free CDN.", "p1", "P2_overview", "P2: India-resident marketplace.", "p2") \
+        + figpair("P3_overview", "P3: hybrid architecture in the EU.", "p3", "P4_overview", "P4: RBI/PCI fintech on AWS Mumbai.", "p4") \
+        + figpair("P5_overview", "P5: .NET monolith on Azure India.", "p5", "P6_overview", "P6: offline-first Android on a BaaS.", "p6") \
+        + T(r"""
+\subsection{P2: Home-services marketplace (India)}
+The residency requirement (India) and the DPDP Act~\cite{dpdp} removed every candidate without an Indian region before
+any scoring: Render, Railway, Fly.io (Mumbai is on its region-consolidation list~\cite{fly}), Neon~\cite{neon},
+Upstash, Algolia, Auth0 and Clerk. Firebase was excluded because Firebase Authentication offers no choice of data
+location, and Stripe because Indian payment data must stay in India; payments go to Razorpay, an Indian gateway that
+supports UPI and payouts to service providers~\cite{razorpay}.
+
+On the frontend, \texttt{seo\_critical} rewards server rendering and the Android app can share React and TypeScript
+with the web application, which gives Next.js with React Native (Expo); Flutter loses because nobody on the team knows
+Dart. Django narrowly beats NestJS for the backend (8.8 against 8.3, shown as a close call): both match the team, and
+Django's built-in admin and authentication help a marketplace, whereas a backend-as-a-service scores lower for its
+multi-party workflows. PostgreSQL holds the relational marketplace data and also provides full-text search, which is
+sufficient for 15\,GB at this scale. It runs on Cloud SQL in Mumbai next to Cloud Run, which scales to zero, supports
+WebSockets and needs no DevOps. Because \texttt{priorities.cost} is 4, the database runs in a single zone, and the engine
+says so in a warning: single-zone managed databases offer about 99.5\% against the 99.9\% target, and a standby would
+roughly double that line item. One-time passwords are sent through MSG91 with DLT-registered templates inside India
+(Twilio is excluded by residency). The estimate of \$@@c2min@@--@@c2max@@ per month keeps the floor within the \$150
+budget, and the upper end is flagged.
+""", c2min=c2["min"], c2max=c2["max"]) \
+        + fig("P2_core", "0.8", "Core stack for P2, with justifications, the input fields that drove each choice, rejected alternatives (including hard-constraint exclusions) and trade-offs.", "p2core") \
+        + T(r"""
+\subsection{P4: Digital lending and payments (India)}
+The AWS preference, RBI localisation~\cite{rbi}, PCI DSS~\cite{pci}, DPDP and ISO 27001 together with Indian
+residency leave only AWS services in ap-south-1 and self-run software. Payments must go through an RBI-authorised
+aggregator with PCI DSS certification, so Razorpay is chosen and Stripe and Paddle are excluded. Spring Boot matches the
+Java and Kotlin team, and the description's ``double-entry ledger'' adds a factor for declarative ACID transactions;
+the security priority of 5 favours its track record. React Native covers Android and iOS from the team's TypeScript,
+and a React web application shares the same skills. PostgreSQL on Amazon RDS Multi-AZ provides the standby required by
+the 99.95\% availability target; DynamoDB and MongoDB lose on multi-row transactions for a ledger. The services run on
+ECS with Fargate across availability zones: EKS is penalised as over-engineering for 300,000 users, and Lambda and
+Amplify are excluded because a long-running Spring Boot service needs containers. The supporting services are a
+SageMaker endpoint for the credit-scoring model, SQS for disbursal and EMI workflows, S3 with KMS encryption for KYC
+documents, Spring Security with SMS one-time passwords (which avoids per-user identity fees at 300,000 users), WAF, KMS,
+CloudTrail and GuardDuty for the auditors, and CloudWatch logs kept in India as required by CERT-In~\cite{certin}. The
+estimate is \$@@c4min@@--@@c4max@@ per month against a budget of \$6,000. The PDF variant with \texttt{has\_devops=false}
+yields @@same@@, since every chosen service is already fully managed.
+""", c4min=f"{c4['min']:,}", c4max=f"{c4['max']:,}", same="the same core stack" if same4 else "a different core stack") \
 
 
-def print_pdf(html_path, pdf_path):
-    browser = screenshots.find_browser()
-    import tempfile
-    prof = tempfile.mkdtemp(prefix="ss-pdf-")
-    url = "file:///" + html_path.replace("\\", "/")
-    subprocess.run([browser, "--headless=new", "--disable-gpu", "--no-first-run", f"--user-data-dir={prof}",
-                    "--no-pdf-header-footer", "--virtual-time-budget=8000", f"--print-to-pdf={pdf_path}", url],
-                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=240)
-    with open(pdf_path, "rb") as f:
-        data = f.read()
-    counts = [int(x) for x in re.findall(rb"/Count (\d+)", data)]
-    return max(counts) if counts else -1
+def s7():
+    rows = [
+        ("Missing fields", "Required field absent: error per field. Optional field absent: documented default.", "\\texttt{invalid\\_input} with every missing field listed (E01); lenient mode applies defaults; optional defaults appear in the assumptions (E20)."),
+        ("Invalid values", "Strict checks of type, range and enumeration; the engine never raises.", "All 22 problems of E02 reported in one pass with allowed values and suggestions; non-object input handled."),
+        ("Contradictions", "Pre-flight checks for incompatible hard constraints and 57 warning rules (budget floor, availability vs.\\ team, effort vs.\\ capacity, latency, platforms).", "\\texttt{infeasible} with resolution options (E09: RBI localisation vs.\\ EU residency; E15: no cloud vs.\\ managed cloud); critical warnings and named relaxations (E03: 5M users on a \\$0 budget, E04, E05)."),
+        ("Over-engineering", "Scale floors, team-size and DevOps guard, static eligibility.", "A launch site with 2M users stays static on a CDN (E06); a 40-person internal tool becomes one Django application (E07)."),
+        ("Regulatory", "Compliance scopes and residency filters.", "Only BAA-covered services for health data (E08); Indian gateway and Indian regions (P4); an EU-hosted identity provider for GDPR (E14)."),
+        ("Existing systems", "Alias matching, reuse bonus and integration rules.", "Entra ID reused for SSO, Microsoft 365 through Graph, on-premise SQL Server 2019 reached through an App Service Hybrid Connection (P5)."),
+        ("Restricted deployment", "Self-hosting and on-premise filters; impossible requirements relaxed.", "Air-gapped: Spring Boot, self-managed PostgreSQL, RKE2, Keycloak, SeaweedFS, GitLab and Prometheus; payments and phone OTP relaxed with critical warnings; no CDN (E10)."),
+        ("Skill mismatch", "Experience-weighted skill factor and a \\texttt{SKILL\\_MISMATCH} warning.", "A PHP and JavaScript team building live auctions receives NestJS with Socket.IO rather than a Go or Elixir stack (E12)."),
+        ("Deprecated technology", "Lifecycle registry and status of knowledge-base entries.", "Never recommended; Heroku, MySQL 5.7, Xamarin, App Center, Node.js 16 and Realm Sync flagged (E13); extended-support note for SQL Server 2019 (P5)."),
+    ]
+    body = "\n".join(f"{a} & {b} & {c}\\\\" for a, b, c in rows)
+    return r"""\section{Edge-case handling}\label{sec:edges}
+Table~\ref{tab:edges} covers each category of Section~6 of the brief; the scenarios are in \texttt{scenarios/edge/} and
+their outputs in \texttt{outputs/edge/}. Further screenshots are in Appendix~\ref{app:shots}.
+
+{\footnotesize
+\begin{longtable}{@{}P{2.3cm}P{5.1cm}P{7.8cm}@{}}
+\caption{Edge-case categories, detection and behaviour.}\label{tab:edges}\\
+\toprule
+Category & Detection & Behaviour (scenario)\\
+\midrule
+\endfirsthead
+\toprule
+Category & Detection & Behaviour (scenario)\\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+""" + body + r"""
+\end{longtable}}
+""" + figpair("E09_infeasible", "E09: contradictory hard constraints give \\texttt{infeasible} with resolution options.", "e09",
+              "E10_notes", "E10: air-gapped deployment; impossible requirements relaxed with critical warnings.", "e10") \
+        + figpair("E13_notes", "E13: end-of-life existing systems.", "e13",
+                  "E03_notes", "E03: 5M users, \\$0 budget, solo beginner.", "e03")
+
+
+def s8(st):
+    rub = rubric_check()
+    rows = "\n".join(f"{sid} & {'pass' if ok else 'fail'} & {L(', '.join(l for l, v in layers if v))} & {L(', '.join(bad) or 'none')}\\\\"
+                     for sid, ok, layers, bad in rub)
+    passed = sum(1 for r in rub if r[1])
+    sens = st["sens"]
+    return T(r"""\section{Validation}
+\paragraph{Rubric.} For each public scenario I listed, from the brief and from public reference architectures, the
+choices per layer that a senior engineer would accept and the choices that would clearly be wrong (for example Stripe
+or a US-only platform for P4, Kubernetes for P1). The rubric is encoded in the report generator and checked
+automatically; @@passed@@ of 6 scenarios pass (Table~\ref{tab:rubric}).
+
+\begin{table}[htbp]
+\centering\small
+\caption{Rubric check of the public scenarios.}\label{tab:rubric}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Scenario & Result & Layers within the acceptable set & Clearly wrong choices\\
+\midrule
+@@rows@@
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Comparison with real systems.} The P3 recommendation resembles how collaborative editors are built in
+practice: Figma runs stateful multiplayer servers per document alongside a conventional API~\cite{figma}, and Excalidraw
+relays edits over WebSockets~\cite{excalidraw}. The engine's hybrid design with a Go WebSocket gateway, a Yjs
+CRDT~\cite{yjs} and sticky routing follows the same pattern. P5 matches Microsoft's reference for a basic web
+application on App Service with Azure SQL and Entra ID~\cite{azure_basic}. P6 matches ODK Collect, the open-source tool
+widely used by NGOs for field surveys, which is an offline-first Android client that synchronises forms and media when a
+connection is available~\cite{odk}.
+
+\paragraph{Automated checks.} The @@tests@@ unit tests (@@tests_ok@@) cover the schema, validation errors, determinism
+(repeated runs, a fresh process, key order and the LLM switch), expectations on the public scenarios (Indian regions, cloud
+preference, the payment gateway, reuse of Entra ID) and every edge-case category. A property-based harness generated
+@@fuzz_n@@ random scenarios and re-checked each chosen component against the knowledge base independently of the
+engine. It found @@fuzz_fail@@ violations of hard constraints, determinism, budget reporting, lifecycle status or the
+over-engineering guard; a recommendation took about @@ms@@\,ms on a laptop. Finally, a perturbation study changed one
+input at a time on P1--P6 (@@pert@@ changes). In @@nochange@@ cases the core stack did not change, on average
+@@avg@@ core decisions moved, and the larger moves were sensible: switching off realtime in P3 turns the hybrid design
+into a modular monolith (Figure~\ref{fig:whatif}), and enabling SEO selects Next.js.
+""", passed=passed, rows=rows, tests=st["tests"], tests_ok="all passing" if st["tests_ok"] else "see the test log",
+             fuzz_n=f"{st['fuzz_n']:,}", fuzz_fail=st["fuzz_fail"], ms=st["fuzz_ms"], pert=sens["perturbations"],
+             nochange=sens["with_no_core_change"], avg=sens["avg_core_decisions_moved"]) \
+        + fig("P3_whatif", "0.8", "What-if comparison in the UI: P3 re-run with \\texttt{requirements.realtime=false}; the panel lists exactly which decisions changed.", "whatif")
+
+
+def s9():
+    return r"""\section{Limitations and future work}
+\begin{itemize}
+\item The scores and factor weights are curated from documentation, surveys and benchmarks rather than fitted to
+outcome data. A natural next step is to calibrate them against labelled architecture decisions while keeping the
+factor-level explanations.
+\item The cost model uses five scale tiers and unit prices; regional price differences and negotiated discounts are
+ignored. Per-region price tables refreshed from provider pricing APIs would tighten the bands.
+\item Service status changes quickly (App Runner, Heroku and MinIO all changed in 2026). The knowledge base carries a
+snapshot date and a lifecycle registry, but it needs periodic refreshing, for example by comparing against endoflife.date.
+\item Each core layer has a single choice. Polyglot designs, such as a realtime service written in a different language,
+are expressed through the architecture rationale and the supporting services.
+\item Some layers are close calls (the P2 backend, BaaS versus functions in P6). They are labelled as such and both
+options are explained, but the team's preference should decide.
+\end{itemize}
+"""
+
+
+BIB = ["so2025", "stateofjs", "techempower", "dbengines", "endoflife", "rds_sla", "cloudrun_ws", "pg_fts", "apprunner",
+       "heroku", "minio", "azure_cache", "atlas", "supabase_block", "firebase_loc", "rbi", "dpdp", "pci", "certin",
+       "fly", "neon", "razorpay", "figma", "excalidraw", "yjs", "azure_basic", "odk"]
+BIB_MAP = {"apprunner": "apprunner_change", "heroku": "heroku_sustaining", "minio": "minio_repo",
+           "azure_cache": "azure_cache_retire", "atlas": "atlas_app_services", "firebase_loc": "firebase_locations",
+           "rbi": "rbi_localisation", "fly": "fly_consolidation", "neon": "neon_regions", "razorpay": "razorpay_security",
+           "figma": "figma_multiplayer", "excalidraw": "excalidraw_e2e"}
+BIB_EXTRA = {"azure_basic": ("Microsoft Azure Architecture Center: Basic web application",
+                             "https://learn.microsoft.com/azure/architecture/web-apps/app-service/architectures/basic-web-app"),
+             "odk": ("ODK Collect documentation", "https://docs.getodk.org/collect-intro/")}
+
+
+def s10(st):
+    items = []
+    for key in BIB:
+        if key in BIB_EXTRA:
+            title, url = BIB_EXTRA[key]
+        else:
+            s = SOURCES[BIB_MAP.get(key, key)]
+            title, url = s["title"], s["url"]
+        items.append(f"\\bibitem{{{key}}} {L(title)}. \\url{{{url}}}")
+    return T(r"""\section{References and third-party tools}
+The engine has no runtime dependencies beyond the Python standard library, and the UI uses no JavaScript libraries or
+web fonts. The optional description assistant uses the \texttt{anthropic} Python SDK (MIT licence) and the Anthropic
+API; it is disabled by default. The Docker image is based on \texttt{python:3.12-slim}. This report is typeset with
+Tectonic; screenshots are taken with headless Microsoft Edge and cropped with Pillow. The knowledge base draws on the
+Stack Overflow Developer Survey 2025~\cite{so2025}, State of JavaScript 2024~\cite{stateofjs}, the TechEmpower
+benchmarks~\cite{techempower}, DB-Engines~\cite{dbengines}, endoflife.date~\cite{endoflife} and the official
+documentation, pricing, region, compliance and lifecycle pages of each technology; all @@n@@ sources are listed in
+Appendix~\ref{app:sources} and in the UI.
+
+\begingroup
+\renewcommand{\section}[2]{}
+\small
+\begin{thebibliography}{99}
+@@items@@
+\end{thebibliography}
+\endgroup
+\label{sec:endmain}
+""", n=st["sources"], items="\n".join(items))
+
+
+def s11():
+    return r"""\section{AI assistance declaration}
+Claude Code (Anthropic) was used as an AI coding assistant during development, documentation and background research.
+All recommendations are produced by the deterministic engine described in Section~5; no language model is involved in
+selecting any component.
+"""
+
+
+def appendices():
+    pairs = [("E01_missing", "E01: missing required fields."), ("E05_notes", "E05: four platforms in three weeks."),
+             ("E06_overview", "E06: high-traffic site kept static."), ("E11_notes", "E11: AWS preference with on-premise deployment."),
+             ("E20_notes", "E20: minimal file with documented defaults."), ("about", "How-it-works page of the UI.")]
+    wide = [("E02_invalid", "E02: 22 validation errors reported in one pass.", "0.78"),
+            ("P5_notes", "P5: Entra ID, Microsoft 365 and on-premise SQL Server reused.", "0.8"),
+            ("E08_core", "E08: HIPAA scenario with only BAA-covered services.", "0.74"),
+            ("E12_core", "E12: team skills weighed against popular choices.", "0.74"),
+            ("P2_trace", "P2: decision trace with scores, top factors and exclusions.", "0.8"),
+            ("P2_cost", "P2: cost breakdown and assumptions.", "0.72"),
+            ("P2_core", "P2: core stack with justifications, driving input fields, rejected alternatives and trade-offs.", "0.8"),
+            ("P4_support", "P4: supporting services under AWS, RBI, PCI DSS, DPDP and ISO 27001.", "0.74")]
+    out = [r"\clearpage", r"\appendix", r"\section{Additional screenshots}\label{app:shots}\label{sec:appstart}"]
+    for i in range(0, len(pairs), 2):
+        (a, ca), (b, cb) = pairs[i], pairs[i + 1]
+        out.append(figpair(a, ca, "a" + a, b, cb, "a" + b))
+    for n, c, w in wide:
+        out.append(fig(n, w, c, "a" + n))
+    srcs = sorted(SOURCES.values(), key=lambda s: s["title"].lower())
+    items = "\n".join(f"\\item {L(s['title'])}: \\url{{{s['url']}}}" for s in srcs)
+    out.append(r"""\clearpage
+\section{Knowledge-base sources}\label{app:sources}
+{\scriptsize
+\begin{multicols}{2}
+\begin{enumerate}[leftmargin=2.2em,itemsep=0pt]
+""" + items + r"""
+\end{enumerate}
+\end{multicols}}
+\label{sec:append}
+""")
+    return "\n".join(out)
+
+
+def build_tex(st):
+    return "".join([PREAMBLE, title_page(), s1(st), s2(), s3(), s4(), s5(st), s6(), s7(), s8(st), s9(), s10(st),
+                    s11(), appendices(), "\n\\end{document}\n"])
+
+
+def find_tectonic():
+    for p in (shutil.which("tectonic"), os.path.expanduser(r"~\tectonic\tectonic.exe"),
+              os.path.expanduser("~/tectonic/tectonic")):
+        if p and os.path.isfile(p):
+            return p
+    raise SystemExit("Tectonic not found: https://tectonic-typesetting.github.io")
+
+
+def page_of(aux, label):
+    m = re.search(r"\\newlabel\{" + re.escape(label) + r"\}\{\{[^}]*\}\{(\d+)\}", aux)
+    return int(m.group(1)) if m else None
 
 
 def main():
@@ -620,21 +777,27 @@ def main():
     st = dict(kb.stats())
     st.update({"tests": tests, "tests_ok": tests_ok, "fuzz_n": fz["scenarios"], "fuzz_fail": len(fz["failures"]),
                "fuzz_ms": fz["ms_per_scenario"], "sens": sens})
-    os.makedirs(BUILD, exist_ok=True)
-    main_html = os.path.join(BUILD, "_main_only.html")
-    with open(main_html, "w", encoding="utf-8") as f:
-        f.write(build_html(st, main_only=True))
-    main_pages = print_pdf(main_html, os.path.join(BUILD, "_main_only.pdf"))
-    full_html = os.path.join(BUILD, FILE_STEM + ".html")
-    with open(full_html, "w", encoding="utf-8") as f:
-        f.write(build_html(st))
-    pdf = os.path.join(BUILD, FILE_STEM + ".pdf")
-    pages = print_pdf(full_html, pdf)
-    for p in ("_main_only.html", "_main_only.pdf"):
-        os.remove(os.path.join(BUILD, p))
-    print(json.dumps({"pdf": pdf, "total_pages": pages, "title_plus_sections_1_10_pages": main_pages,
-                      "sections_1_10_pages": main_pages - 1, "tests": tests, "fuzz_failures": st["fuzz_fail"],
-                      "rubric": [r[:2] for r in rubric_check()]}, indent=2))
+    tex = os.path.join(BUILD, STEM + ".tex")
+    with open(tex, "w", encoding="utf-8", newline="\n") as f:
+        f.write(build_tex(st))
+    print("compiling LaTeX ...")
+    r = subprocess.run([find_tectonic(), "-X", "compile", "--keep-intermediates", "--keep-logs", tex], cwd=BUILD,
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        print(r.stdout[-3000:], r.stderr[-3000:])
+        raise SystemExit("LaTeX compilation failed")
+    with open(os.path.join(BUILD, STEM + ".aux"), encoding="utf-8") as f:
+        aux = f.read()
+    end_main, app_start, app_end = (page_of(aux, k) for k in ("sec:endmain", "sec:appstart", "LastPage"))
+    total = app_end + 1                 # + unnumbered title page
+    sections_1_10 = end_main            # numbering restarts at 1 on the Abstract page
+    appendix_pages = app_end - app_start + 1
+    report = {"pdf": os.path.join(BUILD, STEM + ".pdf"), "physical_pages": total,
+              "sections_1_10_pages": sections_1_10, "appendix_pages": appendix_pages, "tests": tests,
+              "fuzz_failures": st["fuzz_fail"], "rubric_passed": sum(1 for x in rubric_check() if x[1])}
+    print(json.dumps(report, indent=2))
+    if sections_1_10 > 15 or appendix_pages > 10:
+        raise SystemExit("PAGE LIMIT EXCEEDED (Section 10 of the brief: sections 1-10 <= 15 pages, appendices <= 10)")
 
 
 if __name__ == "__main__":
