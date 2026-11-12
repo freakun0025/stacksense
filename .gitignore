@@ -28,6 +28,9 @@ node_modules/
 Thumbs.db
 desktop.ini
 
+# Generated report (screenshots + PDF) - rebuild with: python report/build_report.py
+report/build/
+
 # Local scratch output (the curated outputs/P*_output.json files ARE committed)
 outputs/scratch/
 *.tmp
