@@ -299,6 +299,5 @@ src("power_apps", "Power Apps licensing", "https://www.microsoft.com/power-platf
 src("waf", "AWS WAF pricing", "https://aws.amazon.com/waf/pricing/", "pricing")
 src("kms", "AWS KMS", "https://docs.aws.amazon.com/kms/")
 src("keyvault", "Azure Key Vault", "https://learn.microsoft.com/azure/key-vault/")
-src("hetzner_regions", "Hetzner locations", "https://docs.hetzner.com/cloud/general/locations/")
 
 SOURCES = S

@@ -35,6 +35,33 @@ TRIGGER = {"cache": ["scale.peak_concurrent_users"], "queue": ["requirements.pay
            "analytics": ["project.type"]}
 
 
+FUNCTIONS_PRODUCT = {"cloudflare": "Cloudflare Workers", "netlify": "Netlify Functions", "vercel": "Vercel Functions",
+                     "cloud_run": "Cloud Run functions", "firebase_hosting": "Cloud Functions for Firebase",
+                     "lambda": "AWS Lambda", "amplify": "AWS Lambda", "s3_cloudfront": "AWS Lambda",
+                     "azure_swa": "Azure Functions", "app_service": "Azure Functions",
+                     "container_apps": "Azure Functions", "github_pages": "Cloudflare Workers"}
+TEMPLATE_PRODUCT = {"django": "Django templates", "rails": "Rails views", "laravel": "Laravel Blade",
+                    "spring_boot": "Thymeleaf (Spring MVC)", "aspnet_core": "ASP.NET Core Razor Pages",
+                    "phoenix": "Phoenix HEEx templates", "go_chi": "Go html/template", "fastapi": "Jinja2 (FastAPI)"}
+FUNC_LANG = [("typescript", "TypeScript"), ("javascript", "JavaScript"), ("python", "Python"), ("go", "Go"),
+             ("java", "Java"), ("csharp", "C#")]
+
+
+def _concrete_labels(p, plan):
+    """Name the concrete product for generic building blocks (serverless functions, server templates)."""
+    fe, be, host = plan["fe"], plan["be"], plan["host"]
+    if be.winner is not None and be.winner.id == "functions":
+        product = FUNCTIONS_PRODUCT.get(host.winner.id if host.winner else "", "AWS Lambda")
+        lang = next((name for key, name in FUNC_LANG if key in p.langs), "TypeScript")
+        role = " - form handler" if not p.needs_backend else ""
+        be.label = f"{product} ({lang}{role})"
+    for i, (part, cand, ok, ex, plats) in enumerate(fe.parts):
+        if cand.id == "htmx" and be.winner is not None:
+            name = f"{TEMPLATE_PRODUCT.get(be.winner.id, 'Server-side templates')} + HTMX"
+            fe.label = fe.label.replace(cand.label, name)
+            cand.label = name
+
+
 def _triggers(key, p):
     """Input fields that caused a supporting capability to be included (actual cause, not a static list)."""
     if key == "queue":
@@ -204,6 +231,7 @@ def _recommend(raw, lenient, include_trace):
         else:
             assumptions.append(f"Budget re-plan attempted (cost weighted at 5) but no cheaper compliant plan exists")
     assumptions.extend(plan["notes"])
+    _concrete_labels(p, plan)
     fe, be, db, off, host, picks, cost = (plan[k] for k in ("fe", "be", "db", "off", "host", "picks", "cost"))
 
     stack = {"frontend": explain.frontend_component(fe, p)}

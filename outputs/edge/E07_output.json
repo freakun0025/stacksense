@@ -4,7 +4,7 @@
   "kb_version": "2026.11 (as of 2026-11-13)",
   "input_hash": "5ffae1ae91775fad",
   "status": "ok",
-  "summary": "Monolith: Django + Cloud SQL for PostgreSQL serving Server-rendered templates + HTMX, hosted on Google Cloud Run (us-central1 Iowa). Estimated $9-40/month (around the $20 budget).",
+  "summary": "Monolith: Django + Cloud SQL for PostgreSQL serving Django templates + HTMX, hosted on Google Cloud Run (us-central1 Iowa). Estimated $9-40/month (around the $20 budget).",
   "architecture_style": "monolith",
   "architecture_rationale": {
     "text": "A single deployable is the fastest and cheapest option for a 1-person team building a internal_tool with 50 users. Over-engineering guard: microservices rejected: 1 engineer(s), no DevOps cannot absorb the operational overhead.",
@@ -16,7 +16,7 @@
   },
   "stack": {
     "frontend": {
-      "choice": "Server-rendered templates + HTMX",
+      "choice": "Django templates + HTMX",
       "justification": "Web - Server-rendered templates + HTMX: Chosen because team already works in python (team.languages); strong cost efficiency (5/5) with priorities.cost=5; strong time-to-market (4/5) with priorities.time_to_market=5; form-heavy CRUD screens render well on the server.",
       "driven_by": [
         "team.languages",
