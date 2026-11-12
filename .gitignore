@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments (never commit - challenge rule 9.3)
+.venv/
+venv/
+env/
+
+# Secrets - only .env.example is committed
+.env
+.env.*
+!.env.example
+
+# Node (not used, but keep any accidental installs out)
+node_modules/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local scratch output (the curated outputs/P*_output.json files ARE committed)
+outputs/scratch/
+*.tmp
+*.log
+edge-profile/
