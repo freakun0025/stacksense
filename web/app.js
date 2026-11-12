@@ -227,7 +227,11 @@ async function run() {
   btn.innerHTML = `<span class="spinner"></span> Thinking…`;
   try {
     const lenient = $("#lenient").checked ? "?lenient=1" : "";
-    const r = await api("/api/recommend" + lenient, readForm());
+    // an imported/loaded file that has not been edited is sent verbatim (so invalid values are reported
+    // exactly as the CLI reports them); once edited, the form is the source of truth
+    const untouched = Object.keys(S.loaded).length && !$$("[data-dirty='1']").length &&
+      ($("#scenario-id").value.trim() || undefined) === S.loaded.scenario_id;
+    const r = await api("/api/recommend" + lenient, untouched ? S.loaded : readForm());
     S.prev = S.last; S.last = r;
     renderResult(r, S.prev);
     switchTab("result");
@@ -325,8 +329,8 @@ function renderResult(r, prev) {
     html += `<div class="kpis" id="sec-kpis">
       <div class="card"><div class="kpi-label">Architecture style</div><div class="arch-style">${esc(r.architecture_style.replace(/_/g, " "))}</div>
         <div class="kpi-sub">${esc(r.architecture_rationale ? r.architecture_rationale.text : "")}</div></div>
-      <div class="card" id="sec-cost"><div class="kpi-label">Estimated monthly cost</div><div class="kpi-value">${fmtUsd(lo)} – ${fmtUsd(hi)}</div>
-        <div class="kpi-sub">≈ ${fmtInr(lo)} – ${fmtInr(hi)} (at ₹${INR_PER_USD}/US$) · budget ${budget !== undefined ? fmtUsd(budget) : "—"}</div>
+      <div class="card" id="sec-cost"><div class="kpi-label">Estimated monthly cost</div><div class="kpi-value">${lo === hi ? fmtUsd(lo) : `${fmtUsd(lo)} – ${fmtUsd(hi)}`}</div>
+        <div class="kpi-sub">≈ ${lo === hi ? fmtInr(lo) : `${fmtInr(lo)} – ${fmtInr(hi)}`} (at ₹${INR_PER_USD}/US$) · budget ${budget !== undefined ? fmtUsd(budget) : "—"}</div>
         <div class="budget-bar"><div class="band" style="left:${(lo / scale) * 100}%;width:${Math.max(1, ((hi - lo) / scale) * 100)}%"></div>${budget !== undefined ? `<div class="budget" style="left:${(budget / scale) * 100}%" title="budget"></div>` : ""}</div>
         <details><summary class="small">Breakdown & assumptions</summary><table><tbody>${(c.breakdown || []).map((b) => `<tr><td>${esc(b.component)}<div class="small muted">${esc(b.basis)}</div></td><td class="mono">${fmtUsd(Math.round(b.min))}–${fmtUsd(Math.round(b.max))}</td></tr>`).join("")}</tbody></table>
         <ul class="small">${(c.assumptions || []).map((a) => `<li>${esc(a)}</li>`).join("")}</ul></details></div>
@@ -337,12 +341,12 @@ function renderResult(r, prev) {
         <div>Effort ${esc(r.profile.feature_points)} pts vs capacity ${esc(r.profile.team_capacity)} (ratio ${esc(r.profile.effort_ratio)})</div>
         ${(r.profile.description_signals || []).length ? `<div>Description signals: ${r.profile.description_signals.map((s) => `<span class="driver">${esc(s)}</span>`).join(" ")}</div>` : ""}</div>` : ""}</div>
     </div>`;
-    html += `<h3 id="sec-core">Core stack</h3><div class="core-grid">${["frontend", "backend", "database", "hosting"].map((k) => compCard(k, r.stack[k], prev && prev.stack ? prev.stack[k] : null)).join("")}</div>`;
+    html += `<h3 id="sec-core">Core stack</h3><div class="core-grid" id="sec-core-grid">${["frontend", "backend", "database", "hosting"].map((k) => compCard(k, r.stack[k], prev && prev.stack ? prev.stack[k] : null)).join("")}</div>`;
     const pmap = prev && prev.stack ? Object.fromEntries((prev.stack.supporting || []).map((s) => [s.layer + "|" + (s.purpose || ""), s])) : null;
-    html += `<h3 id="sec-support">Supporting services (${r.stack.supporting.length})</h3><div class="supp-grid">${r.stack.supporting.map((s) => suppCard(s, pmap)).join("")}</div><br>`;
+    html += `<h3 id="sec-support">Supporting services (${r.stack.supporting.length})</h3><div class="supp-grid" id="sec-support-grid">${r.stack.supporting.map((s) => suppCard(s, pmap)).join("")}</div><br>`;
   }
 
-  html += `<div class="grid2"><div class="card" id="sec-warnings"><h3>Warnings &amp; risks (${warns.length})</h3>${warns.length ? warns.map((w) => `<div class="warn sev-${w.severity}"><span class="sev">${esc(w.severity)}</span><div><b>${esc(w.code)}</b> — ${esc(w.message)}<div><code>${esc((w.fields || []).join(", "))}</code></div></div></div>`).join("") : `<p class="muted">None.</p>`}</div>
+  html += `<div class="grid2" id="sec-notes"><div class="card" id="sec-warnings"><h3>Warnings &amp; risks (${warns.length})</h3>${warns.length ? warns.map((w) => `<div class="warn sev-${w.severity}"><span class="sev">${esc(w.severity)}</span><div><b>${esc(w.code)}</b> — ${esc(w.message)}<div><code>${esc((w.fields || []).join(", "))}</code></div></div></div>`).join("") : `<p class="muted">None.</p>`}</div>
     <div class="card" id="sec-assumptions"><h3>Assumptions &amp; relaxations (${(r.assumptions || []).length})</h3><ul class="assume">${(r.assumptions || []).map((a) => `<li class="${a.startsWith("RELAXED") ? "relaxed" : ""}">${esc(a)}</li>`).join("") || "<li class='muted'>None.</li>"}</ul></div></div>`;
 
   if (r.decision_trace) {
@@ -439,11 +443,43 @@ async function boot() {
   if (qp.get("scenario")) { sel.value = qp.get("scenario"); await loadScenario(qp.get("scenario")); }
   if (qp.get("tab")) switchTab(qp.get("tab"));
   if (qp.get("run") === "1") await run();
+  if (qp.get("whatif")) {            // e.g. whatif=requirements.realtime:false  -> edit one field and re-run
+    const data = readForm();
+    qp.get("whatif").split(",").forEach((pair) => {
+      const [path, raw] = pair.split(":");
+      let v = raw;
+      try { v = JSON.parse(raw); } catch (e) { /* keep string */ }
+      setPath(data, path, v);
+    });
+    writeForm(data, true);
+    qp.get("whatif").split(",").forEach((pair) => {
+      const ctl = document.getElementById("f_" + pair.split(":")[0].replace(/\./g, "__"));
+      if (ctl) ctl.dataset.dirty = "1";
+    });
+    await run();
+  }
   if (qp.get("open")) $$("details").forEach((d) => (d.open = qp.get("open") === "all" || d.closest("#" + qp.get("open"))));
   if (qp.get("focus")) {
     const el = document.getElementById(qp.get("focus"));
     if (el) { const y = el.getBoundingClientRect().top + window.scrollY - 70; window.scrollTo(0, y); }
   }
+  // isolate=sec-core,sec-core-grid : show only those result sections (used for documentation screenshots)
+  if (qp.get("isolate")) {
+    const keep = qp.get("isolate").split(",");
+    Array.from($("#result-root").children).forEach((child) => {
+      const hit = keep.some((id) => child.id === id || child.querySelector("#" + CSS.escape(id)));
+      child.style.display = hit ? "" : "none";
+    });
+    window.scrollTo(0, 0);
+  }
+  // publish section positions (used by report/screenshots.py to crop full-page captures)
+  const boxes = {};
+  $$("[id^=sec-]").forEach((el) => {
+    const r = el.getBoundingClientRect();
+    boxes[el.id] = [Math.round(r.top + window.scrollY), Math.round(r.height)];
+  });
+  boxes.__doc = [0, document.documentElement.scrollHeight];
+  document.documentElement.dataset.boxes = JSON.stringify(boxes);
   document.body.dataset.ready = "1";
 }
 boot().catch((e) => { document.body.innerHTML = `<pre style="padding:20px">StackSense UI failed to start: ${esc(e.message)}\nIs the server running? (python stacksense.py serve)</pre>`; });
