@@ -123,7 +123,8 @@ def _db_component(plan, p):
 def _summary(p, style, plan, stack, cost):
     fe, be, host = plan["fe"], plan["be"], plan["host"]
     budget = f"${p.budget:,.0f}"
-    band = f"${cost['min']:,}-{cost['max']:,}/month"
+    band = (f"${cost['min']:,}/month" if cost["min"] == cost["max"]
+            else f"${cost['min']:,}-{cost['max']:,}/month")
     fit = "within" if cost["max"] <= p.budget else "above" if cost["min"] > p.budget else "around"
     if style == "static":
         return (f"Static {stack['frontend']['choice']} site on {stack['hosting']['choice']} with no backend or database. "

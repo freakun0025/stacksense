@@ -461,6 +461,8 @@ def _hosting_factors(c, p, ctx):
     if mode == "static":
         if "static" in tr:
             c.add("project.type", 2.5, "serves pre-built static files from a global CDN")
+            if "containers" in tr:
+                c.add("project.type", -1.0, "general-purpose app platform; static hosting is a side feature")
             if "git_deploy" in tr:
                 c.add("team.experience", 0.4, "push-to-deploy from Git with no pipeline to maintain")
             if p.forms and "functions" in tr:
