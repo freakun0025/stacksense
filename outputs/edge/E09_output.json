@@ -1,0 +1,61 @@
+{
+  "scenario_id": "E09",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "b4d9aaa07a3348db",
+  "status": "infeasible",
+  "summary": "The hard constraints contradict each other, so no compliant stack exists. See critical warnings and resolution_options.",
+  "architecture_style": "other",
+  "stack": null,
+  "estimated_monthly_cost_usd": {
+    "min": 0,
+    "max": 0,
+    "currency": "USD",
+    "assumptions": [
+      "Not estimated: constraints are infeasible"
+    ],
+    "breakdown": []
+  },
+  "warnings": [
+    {
+      "code": "RESIDENCY_COMPLIANCE_CONFLICT",
+      "severity": "critical",
+      "message": "rbi_localisation requires payment data to be stored only in India, but data_residency=eu requires it to stay in that jurisdiction. Both cannot hold.",
+      "fields": [
+        "compliance",
+        "infrastructure.data_residency"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "validation_errors": [],
+  "resolution_options": [
+    "Set infrastructure.data_residency to 'india'",
+    "Remove rbi_localisation if the product does not process Indian payment-system data"
+  ],
+  "profile": {
+    "scale_tier": "tiny",
+    "users_design_target": 5000,
+    "peak_concurrent_users": 100,
+    "peak_rps_estimate": 15,
+    "data_gb": 10.0,
+    "db_gb": 10.0,
+    "media_gb": 0.0,
+    "egress_gb_month": 73.2,
+    "primary_region": "eu",
+    "effective_residency": "india",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": true,
+    "feature_points": 11.5,
+    "team_capacity": 30.0,
+    "effort_ratio": 0.38,
+    "background_jobs": true,
+    "geospatial": false,
+    "ledger": true,
+    "low_end_devices": false,
+    "audit_trail": true,
+    "description_signals": []
+  },
+  "llm_used": false
+}

@@ -1,0 +1,1297 @@
+{
+  "scenario_id": "P4_pdf_variant",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "44167dabb4053948",
+  "status": "ok",
+  "summary": "Modular monolith: Spring Boot + Amazon RDS for PostgreSQL serving React + Vite (SPA) (web) + React Native (Expo) for Android + iOS, hosted on AWS ECS on Fargate (ap-south-1 Mumbai). Estimated $1,150-4,850/month (within the $6,000 budget).",
+  "architecture_style": "modular_monolith",
+  "architecture_rationale": {
+    "text": "One deployable with strict internal modules for the fintech domain (e.g. ledger, loans, KYC, payments): a 8-engineer team gets clear boundaries without distributed-system overhead; modules can be extracted later if scale demands it. The ML model is deployed as a separate service so it can be retrained and scaled independently. Over-engineering guard: microservices rejected: 8 engineer(s), no DevOps cannot absorb the operational overhead.",
+    "driven_by": [
+      "team.size",
+      "project.type",
+      "team.has_devops"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "React + Vite (SPA) (web) + React Native (Expo) for Android + iOS",
+      "justification": "Web - React + Vite (SPA): Chosen because team already works in typescript (team.languages); shares React/TypeScript skills and code with the React Native (Expo) app; rich client-side interactivity for a fintech; strong cost efficiency (5/5) with priorities.cost=2. Mobile - React Native (Expo): Chosen because one codebase ships both Android and iOS (project.platforms); team already works in typescript (team.languages); strong time-to-market (5/5) with priorities.time_to_market=3; strong maintainability (4/5) with priorities.maintainability=4.",
+      "driven_by": [
+        "team.languages",
+        "priorities.maintainability",
+        "project.platforms",
+        "project.type",
+        "priorities.cost",
+        "priorities.performance",
+        "priorities.time_to_market",
+        "priorities.security"
+      ],
+      "alternatives": [
+        {
+          "choice": "Next.js (web)",
+          "why_not": "React + Vite scores higher on operational simplicity and cost (fit 6.8 vs 7.3)."
+        },
+        {
+          "choice": "Kotlin Multiplatform + Compose Multiplatform for Android + iOS",
+          "why_not": "React Native scores higher on time-to-market and maintainability (fit 6.6 vs 7.2)."
+        }
+      ],
+      "tradeoffs": [
+        "Routing/data fetching choices left to the team",
+        "Some native modules need custom development builds"
+      ],
+      "fit_score": 7.337,
+      "confidence": "low",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "React + Vite (SPA)",
+          "version": "React 19 + Vite",
+          "kb_id": "react_vite"
+        },
+        {
+          "platform": "android + ios",
+          "choice": "React Native (Expo)",
+          "version": "Expo SDK (New Architecture)",
+          "kb_id": "expo_rn"
+        }
+      ],
+      "sources": [
+        "https://react.dev/",
+        "https://vite.dev/guide/",
+        "https://docs.expo.dev/",
+        "https://reactnative.dev/docs/getting-started"
+      ]
+    },
+    "backend": {
+      "choice": "Spring Boot (Java/Kotlin, JVM LTS)",
+      "justification": "Chosen because strong security (5/5) with priorities.security=5; strong maintainability (5/5) with priorities.maintainability=4; strong scalability (5/5) with priorities.scalability=4; team already works in java (team.languages).",
+      "driven_by": [
+        "priorities.maintainability",
+        "priorities.security",
+        "priorities.scalability",
+        "team.languages",
+        "project.description",
+        "project.type"
+      ],
+      "alternatives": [
+        {
+          "choice": "ASP.NET Core (.NET 10 LTS)",
+          "why_not": "No csharp/fsharp in team.languages: ramp-up time and hiring risk (fit 7.5 vs 8.6)."
+        },
+        {
+          "choice": "NestJS (Node.js LTS, TypeScript)",
+          "why_not": "Spring Boot scores higher on security and fit for the described use case (fit 7.0 vs 8.6)."
+        },
+        {
+          "choice": "Firebase (Firestore + Auth + Functions)",
+          "why_not": "Excluded by hard constraint: cloud_preference=aws: Firebase (Firestore + Auth + Functions) is a Google Cloud service."
+        }
+      ],
+      "tradeoffs": [
+        "Higher memory footprint and slower cold starts",
+        "More ceremony for small apps"
+      ],
+      "fit_score": 8.617,
+      "confidence": "medium",
+      "kb_id": "spring_boot",
+      "version": "Spring Boot 3.5/4 on Java 21/25 LTS",
+      "sources": [
+        "https://spring.io/projects/spring-boot",
+        "https://www.oracle.com/java/technologies/java-se-support-roadmap.html",
+        "https://survey.stackoverflow.co/2025/"
+      ]
+    },
+    "database": {
+      "choice": "Amazon RDS for PostgreSQL (ap-south-1 Mumbai, HA standby)",
+      "justification": "Chosen because strong security (5/5) with priorities.security=5; relational integrity and transactions for a fintech domain; strong maintainability (5/5) with priorities.maintainability=4; strict ACID + constraints for the double-entry ledger. Managed as Amazon RDS for PostgreSQL: same platform and private network as the application hosting; fully managed: no operations work for a team without DevOps.",
+      "driven_by": [
+        "priorities.maintainability",
+        "priorities.security",
+        "project.type",
+        "project.description",
+        "priorities.scalability",
+        "priorities.performance",
+        "priorities.cost",
+        "requirements.availability",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "TimescaleDB (PostgreSQL extension)",
+          "why_not": "Amazon RDS for PostgreSQL scores higher on maintainability and security (fit 7.1 vs 8.4)."
+        },
+        {
+          "choice": "MySQL",
+          "why_not": "Amazon RDS for PostgreSQL scores higher on security and maintainability (fit 6.8 vs 8.4)."
+        },
+        {
+          "choice": "Google BigQuery",
+          "why_not": "Excluded by hard constraint: cloud_preference=aws: Google BigQuery is a Google Cloud service."
+        },
+        {
+          "choice": "Amazon Aurora PostgreSQL",
+          "why_not": "A close runner-up with a slightly weaker overall fit (fit 2.5 vs 2.6)."
+        },
+        {
+          "choice": "Azure Database for PostgreSQL (Flexible Server)",
+          "why_not": "Excluded by hard constraint: cloud_preference=aws: Azure Database for PostgreSQL (Flexible Server) is a Azure service."
+        }
+      ],
+      "tradeoffs": [
+        "Single-writer primary: write scale beyond one large node needs partitioning/sharding",
+        "Vacuum and connection pooling need attention at scale",
+        "~$300+/month at the medium tier"
+      ],
+      "fit_score": 8.4,
+      "confidence": "medium",
+      "kb_id": "postgresql",
+      "version": "PostgreSQL 17/18",
+      "sources": [
+        "https://www.postgresql.org/docs/",
+        "https://www.postgresql.org/docs/current/textsearch.html",
+        "https://postgis.net/documentation/"
+      ],
+      "engine": "PostgreSQL",
+      "offering": "Amazon RDS for PostgreSQL",
+      "offering_kb_id": "rds_pg"
+    },
+    "hosting": {
+      "choice": "AWS ECS on Fargate (ap-south-1 Mumbai)",
+      "justification": "Chosen because strong security (5/5) with priorities.security=5; strong scalability (5/5) with priorities.scalability=4; multi-zone redundancy for availability 99.95%; autoscaling absorbs spiky traffic. Accepted trade-off: needs ongoing operations work but team.has_devops=false (ops burden 3/5).",
+      "driven_by": [
+        "priorities.security",
+        "priorities.scalability",
+        "requirements.availability",
+        "priorities.maintainability",
+        "scale.traffic_pattern",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "AWS Elastic Beanstalk",
+          "why_not": "Weaker maintainability (2/5) with priorities.maintainability=4. AWS ECS on Fargate scores higher on security and traffic elasticity (fit 3.5 vs 5.9)."
+        },
+        {
+          "choice": "Managed Kubernetes (EKS / GKE / AKS)",
+          "why_not": "Over-engineering for 300,000 users (pays off beyond ~1,000,000); needs ongoing operations work but team.has_devops=false (ops burden 5/5) (fit 1.9 vs 5.9)."
+        },
+        {
+          "choice": "Google Cloud Run",
+          "why_not": "Excluded by hard constraint: cloud_preference=aws: Google Cloud Run is a Google Cloud service."
+        }
+      ],
+      "tradeoffs": [
+        "VPC, load balancer and NAT setup add fixed cost and complexity",
+        "Needs ongoing operations work but team.has_devops=false (ops burden 3/5)"
+      ],
+      "fit_score": 5.947,
+      "confidence": "high",
+      "kb_id": "ecs_fargate",
+      "sources": [
+        "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html",
+        "https://aws.amazon.com/fargate/pricing/",
+        "https://docs.aws.amazon.com/apprunner/latest/dg/apprunner-availability-change.html"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "cache",
+        "choice": "Amazon ElastiCache for Valkey (ap-south-1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong security (5/5) with priorities.security=5; strong scalability (5/5) with priorities.scalability=4; strong performance (5/5) with priorities.performance=3.",
+        "driven_by": [
+          "scale.peak_concurrent_users",
+          "priorities.security",
+          "priorities.scalability",
+          "priorities.performance",
+          "priorities.maintainability",
+          "priorities.time_to_market",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Valkey (self-hosted)",
+            "why_not": "Self-hosting another service when a managed option exists; needs ongoing operations work but team.has_devops=false (ops burden 3/5). Amazon ElastiCache for Valkey scores higher on integration with the hosting platform (fit 1.8 vs 6.7)."
+          },
+          {
+            "choice": "Azure Managed Redis",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Azure Managed Redis is a Azure service."
+          }
+        ],
+        "tradeoffs": [
+          "AWS-only; VPC access"
+        ],
+        "fit_score": 6.67,
+        "confidence": "high",
+        "kb_id": "elasticache",
+        "sources": [
+          "https://aws.amazon.com/elasticache/pricing/",
+          "https://valkey.io/"
+        ]
+      },
+      {
+        "layer": "queue",
+        "choice": "Amazon SQS (+ EventBridge Scheduler) (ap-south-1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong security (5/5) with priorities.security=5; strong scalability (5/5) with priorities.scalability=4; dead-letter queues for payment webhooks and reconciliation.",
+        "driven_by": [
+          "requirements.payments",
+          "requirements.file_media_storage",
+          "requirements.ml_features",
+          "priorities.security",
+          "priorities.scalability",
+          "priorities.performance",
+          "priorities.cost"
+        ],
+        "alternatives": [
+          {
+            "choice": "Postgres-backed job queue",
+            "why_not": "Amazon SQS scores higher on integration with the hosting platform and scalability (fit 5.1 vs 7.7)."
+          },
+          {
+            "choice": "Redis-backed job queue",
+            "why_not": "Amazon SQS scores higher on integration with the hosting platform and payments fit (fit 3.7 vs 7.7)."
+          },
+          {
+            "choice": "Google Cloud Tasks / Pub/Sub",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Google Cloud Tasks / Pub/Sub is a Google Cloud service."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 7.703,
+        "confidence": "high",
+        "kb_id": "sqs",
+        "sources": [
+          "https://aws.amazon.com/sqs/"
+        ]
+      },
+      {
+        "layer": "auth",
+        "choice": "Spring Security (OAuth2/JWT)",
+        "justification": "Chosen because OTP verification inside the backend; no per-MAU identity fees; strong security (4/5) with priorities.security=5; strong cost efficiency (5/5) with priorities.cost=2; strong maintainability (4/5) with priorities.maintainability=4.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon Cognito",
+            "why_not": "~$1,116+/month in per-user identity fees for 300,000 users; Amazon Cognito starts around $1,116/month against a $6,000/month total budget. Spring Security scores higher on authentication fit (fit 2.6 vs 4.0)."
+          },
+          {
+            "choice": "Microsoft Entra ID",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Microsoft Entra ID is a Azure service."
+          }
+        ],
+        "tradeoffs": [
+          "You own password storage, rate limiting and MFA flows"
+        ],
+        "fit_score": 4.003,
+        "confidence": "medium",
+        "kb_id": "framework_auth",
+        "sources": [
+          "https://www.better-auth.com/docs",
+          "https://learn.microsoft.com/aspnet/core/",
+          "https://spring.io/projects/spring-boot"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "SMS OTP delivery",
+        "choice": "Amazon SNS / End User Messaging SMS (ap-south-1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong security (5/5) with priorities.security=5; strong scalability (5/5) with priorities.scalability=4; strong maintainability (4/5) with priorities.maintainability=4.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.security",
+          "priorities.scalability",
+          "priorities.maintainability",
+          "priorities.performance",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "MSG91 OTP (DLT-registered)",
+            "why_not": "Amazon SNS / End User Messaging SMS scores higher on integration with the hosting platform and security (fit 5.4 vs 6.0)."
+          },
+          {
+            "choice": "Azure Communication Services SMS",
+            "why_not": "Different cloud from the application hosting (fit 1.6 vs 6.0)."
+          },
+          {
+            "choice": "Twilio Verify",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "India SMS needs DLT sender registration"
+        ],
+        "fit_score": 5.97,
+        "confidence": "low",
+        "kb_id": "sns_sms",
+        "sources": [
+          "https://www.trai.gov.in/"
+        ]
+      },
+      {
+        "layer": "storage",
+        "choice": "Amazon S3 (ap-south-1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong security (5/5) with priorities.security=5; strong maintainability (5/5) with priorities.maintainability=4; strong scalability (5/5) with priorities.scalability=4.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "priorities.security",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.performance",
+          "project.description",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "SeaweedFS (self-hosted S3-compatible)",
+            "why_not": "Self-hosting another service when a managed option exists; needs ongoing operations work but team.has_devops=false (ops burden 3/5). Amazon S3 scores higher on integration with the hosting platform (fit 1.1 vs 7.6)."
+          },
+          {
+            "choice": "Ceph RGW (self-hosted S3-compatible)",
+            "why_not": "Needs ongoing operations work but team.has_devops=false (ops burden 5/5); self-hosting another service when a managed option exists. Amazon S3 scores higher on integration with the hosting platform (fit 0.6 vs 7.6)."
+          },
+          {
+            "choice": "Azure Blob Storage",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Azure Blob Storage is a Azure service."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 7.637,
+        "confidence": "high",
+        "kb_id": "s3",
+        "sources": [
+          "https://aws.amazon.com/s3/pricing/"
+        ]
+      },
+      {
+        "layer": "cdn",
+        "choice": "Amazon CloudFront",
+        "justification": "Chosen because same cloud/platform and region as the application; strong security (5/5) with priorities.security=5; strong scalability (5/5) with priorities.scalability=4; strong performance (5/5) with priorities.performance=3.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "scale.users_12_months",
+          "priorities.security",
+          "priorities.scalability",
+          "priorities.performance",
+          "priorities.cost",
+          "priorities.maintainability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Cloudflare CDN (free/pro plan)",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Cloudflare CDN (free/pro plan) runs outside AWS."
+          }
+        ],
+        "tradeoffs": [
+          "Cache only public, non-personal assets at the edge"
+        ],
+        "fit_score": 6.903,
+        "confidence": "high",
+        "kb_id": "cloudfront",
+        "sources": [
+          "https://aws.amazon.com/cloudfront/pricing/"
+        ]
+      },
+      {
+        "layer": "payments",
+        "choice": "Razorpay",
+        "justification": "Chosen because RBI-authorised Indian gateway: UPI, cards and netbanking; strong security (5/5) with priorities.security=5; native UPI collection as described; payouts/disbursals to providers or borrowers.",
+        "driven_by": [
+          "requirements.payments",
+          "infrastructure.data_residency",
+          "project.description",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.maintainability",
+          "priorities.scalability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Stripe (Payments + Billing)",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "India-centric"
+        ],
+        "fit_score": 7.303,
+        "confidence": "high",
+        "kb_id": "razorpay",
+        "sources": [
+          "https://razorpay.com/docs/",
+          "https://razorpay.com/security/",
+          "https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=11244"
+        ]
+      },
+      {
+        "layer": "ml",
+        "choice": "Amazon SageMaker AI real-time endpoint (ap-south-1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong security (5/5) with priorities.security=5; managed endpoint with model registry, IAM and audit trail; strong scalability (5/5) with priorities.scalability=4.",
+        "driven_by": [
+          "requirements.ml_features",
+          "priorities.security",
+          "priorities.scalability",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Containerised model service (FastAPI + ONNX Runtime/scikit-learn)",
+            "why_not": "No python in team.languages: ramp-up time and hiring risk. Amazon SageMaker AI real-time endpoint scores higher on integration with the hosting platform and security (fit 3.1 vs 6.4)."
+          },
+          {
+            "choice": "Vertex AI (Gemini)",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Vertex AI (Gemini) is a Google Cloud service."
+          }
+        ],
+        "tradeoffs": [
+          "Always-on endpoint cost"
+        ],
+        "fit_score": 6.417,
+        "confidence": "high",
+        "kb_id": "sagemaker",
+        "sources": [
+          "https://aws.amazon.com/sagemaker/pricing/"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "GitHub Actions",
+        "justification": "Chosen because strong maintainability (5/5) with priorities.maintainability=4; strong scalability (5/5) with priorities.scalability=4; free minutes, large action marketplace, works with any cloud; strong time-to-market (5/5) with priorities.time_to_market=3.",
+        "driven_by": [
+          "team.has_devops",
+          "priorities.time_to_market",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Pipelines",
+            "why_not": "Different cloud from the application hosting. GitHub Actions scores higher on time-to-market and maintainability (fit 1.8 vs 5.1)."
+          },
+          {
+            "choice": "GitLab CI (self-managed)",
+            "why_not": "Self-hosting CI is unnecessary; needs ongoing operations work but team.has_devops=false (ops burden 3/5). GitHub Actions scores higher on time-to-market (fit 1.2 vs 5.1)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.087,
+        "confidence": "high",
+        "kb_id": "github_actions",
+        "sources": [
+          "https://docs.github.com/actions"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "purpose": "mobile build and release",
+        "choice": "Expo EAS Build/Submit/Update",
+        "justification": "Chosen because native build pipeline for React Native (Expo); strong time-to-market (5/5) with priorities.time_to_market=3; strong security (4/5) with priorities.security=5; strong maintainability (4/5) with priorities.maintainability=4.",
+        "driven_by": [
+          "project.platforms",
+          "priorities.time_to_market",
+          "priorities.security",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.performance",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Codemagic",
+            "why_not": "Expo EAS Build/Submit/Update scores higher on integration with the frontend (fit 3.1 vs 6.1)."
+          },
+          {
+            "choice": "fastlane on GitHub Actions",
+            "why_not": "Expo EAS Build/Submit/Update scores higher on integration with the frontend and time-to-market (fit 3.0 vs 6.1)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.12,
+        "confidence": "high",
+        "kb_id": "eas",
+        "sources": [
+          "https://docs.expo.dev/build/introduction/"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Amazon CloudWatch + X-Ray (OpenTelemetry) (ap-south-1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong security (5/5) with priorities.security=5; strong scalability (5/5) with priorities.scalability=4; strong maintainability (4/5) with priorities.maintainability=4.",
+        "driven_by": [
+          "requirements.availability",
+          "priorities.security",
+          "priorities.scalability",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.time_to_market",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Monitor Application Insights",
+            "why_not": "Different cloud from the application hosting (fit 2.2 vs 6.3)."
+          },
+          {
+            "choice": "Google Cloud Logging + Monitoring",
+            "why_not": "Different cloud from the application hosting (fit 2.2 vs 6.3)."
+          },
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "CERT-In requires ICT logs to be retained for 180 days within India"
+        ],
+        "fit_score": 6.32,
+        "confidence": "high",
+        "kb_id": "cloudwatch",
+        "sources": [
+          "https://aws.amazon.com/cloudwatch/pricing/",
+          "https://opentelemetry.io/docs/"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "security and compliance controls",
+        "choice": "AWS WAF + KMS + Secrets Manager + CloudTrail/GuardDuty (ap-south-1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong security (5/5) with priorities.security=5; strong scalability (5/5) with priorities.scalability=4; strong maintainability (4/5) with priorities.maintainability=4.",
+        "driven_by": [
+          "compliance",
+          "priorities.security",
+          "priorities.scalability",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.time_to_market",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "HashiCorp Vault/OpenBao + ModSecurity WAF (self-hosted)",
+            "why_not": "Self-hosting another service when a managed option exists; needs ongoing operations work but team.has_devops=false (ops burden 3/5). AWS WAF + KMS + Secrets Manager + CloudTrail/GuardDuty scores higher on integration with the hosting platform (fit 1.4 vs 6.1)."
+          },
+          {
+            "choice": "Azure Key Vault + Defender for Cloud + Front Door WAF",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Azure Key Vault + Defender for Cloud + Front Door WAF is a Azure service."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.087,
+        "confidence": "high",
+        "kb_id": "waf_kms_aws",
+        "sources": [
+          "https://aws.amazon.com/waf/pricing/",
+          "https://docs.aws.amazon.com/kms/"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 1150,
+    "max": 4850,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 300,000 users at 12 months, 10,000 peak concurrent users, ~1,500 req/s peak (scale tier: medium)",
+      "Data: ~150 GB in the database, ~350 GB of media, ~8,789 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work",
+      "Razorpay charges per transaction (typically ~2% domestic); not counted as infrastructure"
+    ],
+    "breakdown": [
+      {
+        "component": "AWS ECS on Fargate (ap-south-1 Mumbai)",
+        "min": 225.0,
+        "max": 750.0,
+        "basis": "medium tier (~1,500 req/s peak, 10,000 concurrent users); x1.5 for redundant instances (availability 99.95%)"
+      },
+      {
+        "component": "Amazon RDS for PostgreSQL",
+        "min": 329.9,
+        "max": 965.0,
+        "basis": "medium tier instance; x2.0 for standby/replicas (availability 99.95%); +130 GB storage above 20 GB"
+      },
+      {
+        "component": "Amazon ElastiCache for Valkey (ap-south-1 Mumbai)",
+        "min": 75.0,
+        "max": 300.0,
+        "basis": "medium tier"
+      },
+      {
+        "component": "Amazon SQS (+ EventBridge Scheduler) (ap-south-1 Mumbai)",
+        "min": 5.0,
+        "max": 30.0,
+        "basis": "medium tier"
+      },
+      {
+        "component": "Spring Security (OAuth2/JWT)",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "300,000 MAU (within free tier)"
+      },
+      {
+        "component": "Amazon SNS / End User Messaging SMS (ap-south-1 Mumbai)",
+        "min": 225.0,
+        "max": 1500.0,
+        "basis": "0.3-1 OTP per user per month x 300,000 users at $0.0025-0.005 per SMS"
+      },
+      {
+        "component": "Amazon S3 (ap-south-1 Mumbai)",
+        "min": 8.05,
+        "max": 73.12,
+        "basis": "350 GB stored, ~1,582 GB/month served"
+      },
+      {
+        "component": "Amazon CloudFront",
+        "min": 5.0,
+        "max": 50.0,
+        "basis": "medium tier"
+      },
+      {
+        "component": "Amazon SageMaker AI real-time endpoint (ap-south-1 Mumbai)",
+        "min": 170.0,
+        "max": 500.0,
+        "basis": "medium tier"
+      },
+      {
+        "component": "GitHub Actions",
+        "min": 0.0,
+        "max": 40.0,
+        "basis": "medium tier"
+      },
+      {
+        "component": "Expo EAS Build/Submit/Update",
+        "min": 19.0,
+        "max": 99.0,
+        "basis": "medium tier"
+      },
+      {
+        "component": "Amazon CloudWatch + X-Ray (OpenTelemetry) (ap-south-1 Mumbai)",
+        "min": 40.0,
+        "max": 200.0,
+        "basis": "medium tier"
+      },
+      {
+        "component": "AWS WAF + KMS + Secrets Manager + CloudTrail/GuardDuty (ap-south-1 Mumbai)",
+        "min": 80.0,
+        "max": 300.0,
+        "basis": "medium tier"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "CERTIFICATION_IS_PROCESS",
+      "severity": "info",
+      "message": "ISO 27001/SOC 2 certify your controls, not the stack: providers with attestations were chosen so you inherit their controls, but you still need policies, access reviews and audits.",
+      "fields": [
+        "compliance"
+      ]
+    },
+    {
+      "code": "CERT_IN_LOGS",
+      "severity": "info",
+      "message": "CERT-In Directions (2022): keep ICT system logs for 180 days within Indian jurisdiction.",
+      "fields": [
+        "infrastructure.data_residency"
+      ]
+    },
+    {
+      "code": "DPDP_OBLIGATIONS",
+      "severity": "info",
+      "message": "DPDP Act 2023: consent notices, purpose limitation, breach intimation to the Data Protection Board and erasure on request. India residency is enforced because data_residency=india.",
+      "fields": [
+        "compliance"
+      ]
+    },
+    {
+      "code": "PCI_SCOPE",
+      "severity": "info",
+      "message": "PCI DSS: use the gateway's hosted checkout/tokenisation so card data never touches your servers (SAQ A scope); only PCI-attested providers were selected.",
+      "fields": [
+        "compliance",
+        "requirements.payments"
+      ]
+    },
+    {
+      "code": "RBI_LOCALISATION",
+      "severity": "info",
+      "message": "RBI data localisation: all payment-system data stays in Indian regions; if any processing happens abroad, the data must be deleted there and returned to India within one business day/24 hours.",
+      "fields": [
+        "compliance"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "medium",
+    "users_design_target": 300000,
+    "peak_concurrent_users": 10000,
+    "peak_rps_estimate": 1500,
+    "data_gb": 500.0,
+    "db_gb": 150.0,
+    "media_gb": 350.0,
+    "egress_gb_month": 8789.1,
+    "primary_region": "india",
+    "effective_residency": "india",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": true,
+    "feature_points": 23.0,
+    "team_capacity": 179.2,
+    "effort_ratio": 0.13,
+    "background_jobs": true,
+    "geospatial": false,
+    "ledger": true,
+    "low_end_devices": false,
+    "audit_trail": true,
+    "description_signals": [
+      "kyc",
+      "ledger"
+    ]
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "React + Vite (SPA)",
+        "score": 7.337,
+        "status": "selected",
+        "top_factors": [
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.00 shares React/TypeScript skills and code with the React Native (Expo) app",
+          "+0.80 rich client-side interactivity for a fintech",
+          "+0.73 strong cost efficiency (5/5) with priorities.cost=2"
+        ]
+      },
+      {
+        "choice": "Next.js",
+        "score": 6.79,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.00 shares React/TypeScript skills and code with the React Native (Expo) app",
+          "+0.80 rich client-side interactivity for a fintech",
+          "+0.73 strong maintainability (4/5) with priorities.maintainability=4"
+        ]
+      },
+      {
+        "choice": "Vue + Vite (SPA)",
+        "score": 6.437,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 team already works in typescript (team.languages)",
+          "+0.80 rich client-side interactivity for a fintech",
+          "+0.73 strong cost efficiency (5/5) with priorities.cost=2",
+          "+0.73 strong maintainability (4/5) with priorities.maintainability=4"
+        ]
+      },
+      {
+        "choice": "Angular",
+        "score": 6.423,
+        "status": "candidate",
+        "top_factors": [
+          "+1.47 strong maintainability (5/5) with priorities.maintainability=4",
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.10 strong security (5/5) with priorities.security=5",
+          "+0.80 rich client-side interactivity for a fintech"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive fintech",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive fintech",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "React Native (Expo)",
+        "score": 7.22,
+        "status": "selected",
+        "top_factors": [
+          "+1.40 one codebase ships both Android and iOS (project.platforms)",
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.73 strong maintainability (4/5) with priorities.maintainability=4"
+        ]
+      },
+      {
+        "choice": "Kotlin Multiplatform + Compose Multiplatform",
+        "score": 6.62,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 one codebase ships both Android and iOS (project.platforms)",
+          "+1.40 team already works in kotlin (team.languages)",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong security (5/5) with priorities.security=5"
+        ]
+      },
+      {
+        "choice": "Ionic + Capacitor",
+        "score": 5.433,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 one codebase ships both Android and iOS (project.platforms)",
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.73 strong cost efficiency (5/5) with priorities.cost=2"
+        ]
+      },
+      {
+        "choice": "Flutter",
+        "score": 4.46,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 one codebase ships both Android and iOS (project.platforms)",
+          "-1.26 no dart in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.73 strong maintainability (4/5) with priorities.maintainability=4"
+        ]
+      },
+      {
+        "choice": "Kotlin + Jetpack Compose (native Android)",
+        "score": null,
+        "status": "excluded",
+        "reason": "does not target ios (project.platforms)",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Swift + SwiftUI (native iOS)",
+        "score": null,
+        "status": "excluded",
+        "reason": "does not target android (project.platforms)",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Unity",
+        "score": null,
+        "status": "excluded",
+        "reason": "game engine: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Godot",
+        "score": null,
+        "status": "excluded",
+        "reason": "game engine: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "Spring Boot (Java/Kotlin, JVM LTS)",
+        "score": 8.617,
+        "status": "selected",
+        "top_factors": [
+          "+1.83 strong security (5/5) with priorities.security=5",
+          "+1.47 strong maintainability (5/5) with priorities.maintainability=4",
+          "+1.47 strong scalability (5/5) with priorities.scalability=4",
+          "+1.40 team already works in java (team.languages)"
+        ]
+      },
+      {
+        "choice": "ASP.NET Core (.NET 10 LTS)",
+        "score": 7.523,
+        "status": "candidate",
+        "top_factors": [
+          "+1.83 strong security (5/5) with priorities.security=5",
+          "+1.47 strong maintainability (5/5) with priorities.maintainability=4",
+          "+1.47 strong scalability (5/5) with priorities.scalability=4",
+          "-1.26 no csharp/fsharp in team.languages: ramp-up time and hiring risk"
+        ]
+      },
+      {
+        "choice": "NestJS (Node.js LTS, TypeScript)",
+        "score": 7.033,
+        "status": "candidate",
+        "top_factors": [
+          "+1.47 strong maintainability (5/5) with priorities.maintainability=4",
+          "+1.40 team already works in typescript (team.languages)",
+          "+0.92 strong security (4/5) with priorities.security=5",
+          "+0.80 modules/DI give structure for a fintech domain"
+        ]
+      },
+      {
+        "choice": "Django (Python)",
+        "score": 6.24,
+        "status": "candidate",
+        "top_factors": [
+          "+1.83 strong security (5/5) with priorities.security=5",
+          "+1.47 strong maintainability (5/5) with priorities.maintainability=4",
+          "-1.26 no python in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Serverless functions",
+        "score": 5.367,
+        "status": "candidate",
+        "top_factors": [
+          "-1.50 a fintech domain needs a structured service, not scattered functions",
+          "+1.47 strong scalability (5/5) with priorities.scalability=4",
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Fastify (Node.js LTS, TypeScript)",
+        "score": 5.117,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 team already works in typescript (team.languages)",
+          "+0.92 strong security (4/5) with priorities.security=5",
+          "+0.73 strong scalability (4/5) with priorities.scalability=4",
+          "+0.60 same language as the web/mobile clients: shared types and validation code"
+        ]
+      },
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Firebase (Firestore + Auth + Functions) is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Next.js full-stack (Route Handlers + Server Actions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "only applies when the web frontend is Next.js",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks ISO 27001 (compliance includes iso27001)",
+        "fields": [
+          "compliance"
+        ]
+      },
+      {
+        "choice": "Appwrite",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "PostgreSQL",
+        "score": 8.4,
+        "status": "selected",
+        "top_factors": [
+          "+1.83 strong security (5/5) with priorities.security=5",
+          "+1.50 relational integrity and transactions for a fintech domain",
+          "+1.47 strong maintainability (5/5) with priorities.maintainability=4",
+          "+1.00 strict ACID + constraints for the double-entry ledger"
+        ]
+      },
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": 7.1,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a fintech domain",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.00 strict ACID + constraints for the double-entry ledger",
+          "+0.92 strong security (4/5) with priorities.security=5"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": 6.75,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a fintech domain",
+          "+1.00 strict ACID + constraints for the double-entry ledger",
+          "+0.92 strong security (4/5) with priorities.security=5",
+          "+0.73 strong maintainability (4/5) with priorities.maintainability=4"
+        ]
+      },
+      {
+        "choice": "SQL Server (Azure SQL)",
+        "score": 6.133,
+        "status": "candidate",
+        "top_factors": [
+          "+1.83 strong security (5/5) with priorities.security=5",
+          "+1.50 relational integrity and transactions for a fintech domain",
+          "+1.00 strict ACID + constraints for the double-entry ledger",
+          "-0.80 SQL Server licensing outside Azure SQL's managed tiers"
+        ]
+      },
+      {
+        "choice": "CockroachDB",
+        "score": 5.195,
+        "status": "candidate",
+        "top_factors": [
+          "+1.83 strong security (5/5) with priorities.security=5",
+          "-1.72 over-engineering for 300,000 users (pays off beyond ~500,000)",
+          "+1.50 relational integrity and transactions for a fintech domain",
+          "+1.47 strong scalability (5/5) with priorities.scalability=4"
+        ]
+      },
+      {
+        "choice": "Amazon DynamoDB",
+        "score": 2.867,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 money/relational data needs multi-row ACID guarantees",
+          "+1.83 strong security (5/5) with priorities.security=5",
+          "+1.47 strong scalability (5/5) with priorities.scalability=4",
+          "+1.10 strong performance (5/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Google BigQuery is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Cloud Firestore",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Cloud Firestore is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Azure Cosmos DB",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Azure Cosmos DB is a Azure service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Amazon RDS for PostgreSQL",
+        "score": 2.644,
+        "status": "selected",
+        "top_factors": [
+          "+3.00 same platform and private network as the application hosting",
+          "-1.16 ~$300+/month at the medium tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Amazon Aurora PostgreSQL",
+        "score": 2.476,
+        "status": "candidate",
+        "top_factors": [
+          "+3.00 same platform and private network as the application hosting",
+          "-1.32 ~$500+/month at the medium tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Azure Database for PostgreSQL (Flexible Server)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Azure Database for PostgreSQL (Flexible Server) is a Azure service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Cloud SQL for PostgreSQL",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Cloud SQL for PostgreSQL is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "DigitalOcean Managed PostgreSQL",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: DigitalOcean Managed PostgreSQL runs outside AWS",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Neon serverless Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Neon serverless Postgres runs outside AWS",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Railway Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Railway Postgres runs outside AWS",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Render Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Render Postgres runs outside AWS",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "AWS ECS on Fargate",
+        "score": 5.947,
+        "status": "selected",
+        "top_factors": [
+          "+1.67 strong security (5/5) with priorities.security=5",
+          "+1.33 strong scalability (5/5) with priorities.scalability=4",
+          "+1.00 multi-zone redundancy for availability 99.95%",
+          "+0.80 autoscaling absorbs spiky traffic"
+        ]
+      },
+      {
+        "choice": "AWS Elastic Beanstalk",
+        "score": 3.467,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 multi-zone redundancy for availability 99.95%",
+          "+0.83 strong security (4/5) with priorities.security=5",
+          "+0.67 strong scalability (4/5) with priorities.scalability=4",
+          "-0.67 weaker maintainability (2/5) with priorities.maintainability=4"
+        ]
+      },
+      {
+        "choice": "Managed Kubernetes (EKS / GKE / AKS)",
+        "score": 1.95,
+        "status": "candidate",
+        "top_factors": [
+          "-2.16 needs ongoing operations work but team.has_devops=false (ops burden 5/5)",
+          "-2.02 over-engineering for 300,000 users (pays off beyond ~1,000,000)",
+          "+1.67 strong security (5/5) with priorities.security=5",
+          "+1.33 strong scalability (5/5) with priorities.scalability=4"
+        ]
+      },
+      {
+        "choice": "AWS Amplify Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Spring Boot (Java/Kotlin, JVM LTS) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Azure App Service",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Azure App Service is a Azure service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Azure Static Web Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Azure Static Web Apps is a Azure service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Google Cloud Run",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Google Cloud Run is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Cloudflare (Workers static assets / Pages) runs outside AWS",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Azure Container Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Azure Container Apps is a Azure service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      }
+    ]
+  }
+}

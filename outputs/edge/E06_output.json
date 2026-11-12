@@ -1,0 +1,467 @@
+{
+  "scenario_id": "E06",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "549ab3196f1822aa",
+  "status": "ok",
+  "summary": "Static Astro site on Cloudflare (Workers static assets / Pages) (global CDN) with no backend or database. Estimated $5-100/month (around the $50 budget).",
+  "architecture_style": "static",
+  "architecture_rationale": {
+    "text": "Pre-rendered pages served from a CDN with no server tier: nothing to patch or scale for a read-only site.",
+    "driven_by": [
+      "project.type",
+      "scale.workload",
+      "requirements.auth"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "Astro",
+      "justification": "Web - Astro: Chosen because team already works in javascript (team.languages); static-first output for a content_site (scale.workload=read_heavy); server-rendered/pre-rendered HTML for seo_critical=true; strong cost efficiency (5/5) with priorities.cost=4.",
+      "driven_by": [
+        "team.languages",
+        "project.type",
+        "requirements.seo_critical",
+        "priorities.cost",
+        "priorities.performance",
+        "priorities.maintainability"
+      ],
+      "alternatives": [
+        {
+          "choice": "Hugo",
+          "why_not": "Astro scores higher on maintainability and learning curve (fit 11.0 vs 11.1)."
+        },
+        {
+          "choice": "Eleventy (11ty)",
+          "why_not": "Astro scores higher on maintainability (fit 10.9 vs 11.1)."
+        }
+      ],
+      "tradeoffs": [
+        "App-like interactivity needs islands/hydration per component",
+        "Smaller ecosystem than React meta-frameworks for complex apps"
+      ],
+      "fit_score": 11.122,
+      "confidence": "low",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "Astro",
+          "version": "Astro 5",
+          "kb_id": "astro"
+        }
+      ],
+      "sources": [
+        "https://docs.astro.build/",
+        "https://2024.stateofjs.com/"
+      ]
+    },
+    "backend": {
+      "choice": "None",
+      "justification": "No dynamic requirement: project.type=content_site, auth=none, payments/realtime/uploads/ML all false, workload=read_heavy. Pages are generated at build time, so there is no server to run.",
+      "driven_by": [
+        "project.type",
+        "requirements.auth",
+        "scale.workload",
+        "requirements.payments"
+      ],
+      "alternatives": [
+        {
+          "choice": "Serverless functions",
+          "why_not": "nothing to execute per request; would add cost and attack surface for no benefit"
+        }
+      ],
+      "tradeoffs": [
+        "Add a server tier later only if dynamic features (forms, auth, comments) appear"
+      ],
+      "fit_score": null,
+      "confidence": "high"
+    },
+    "database": {
+      "choice": "None",
+      "justification": "No persistent application data: content is authored as files in the repository and compiled at build time (Markdown, per project.description)",
+      "driven_by": [
+        "project.type",
+        "requirements.auth",
+        "project.description"
+      ],
+      "alternatives": [
+        {
+          "choice": "Headless CMS / SQLite",
+          "why_not": "adds a moving part and cost for content a single author edits as files"
+        }
+      ],
+      "tradeoffs": [
+        "Add a server tier later only if dynamic features (forms, auth, comments) appear"
+      ],
+      "fit_score": null,
+      "confidence": "high"
+    },
+    "hosting": {
+      "choice": "Cloudflare (Workers static assets / Pages) (global CDN)",
+      "justification": "Chosen because serves pre-built static files from a global CDN; strong scalability (5/5) with priorities.scalability=5; strong cost efficiency (5/5) with priorities.cost=4; strong performance (5/5) with priorities.performance=3.",
+      "driven_by": [
+        "project.type",
+        "priorities.scalability",
+        "priorities.cost",
+        "priorities.performance",
+        "team.experience",
+        "priorities.maintainability"
+      ],
+      "alternatives": [
+        {
+          "choice": "Firebase Hosting",
+          "why_not": "Cloudflare scores higher on scalability and cost (fit 8.1 vs 9.3)."
+        },
+        {
+          "choice": "Amazon S3 + CloudFront",
+          "why_not": "Amazon S3 + CloudFront starts around $40/month against a $50/month total budget. Cloudflare scores higher on learning curve and time-to-market (fit 7.1 vs 9.3)."
+        },
+        {
+          "choice": "On-premise Kubernetes (RKE2 / k3s)",
+          "why_not": "Excluded by hard constraint: deployment_model=managed_cloud is not on-premise."
+        }
+      ],
+      "tradeoffs": [
+        "Cloudflare now steers new projects from Pages to Workers static assets"
+      ],
+      "fit_score": 9.33,
+      "confidence": "medium",
+      "kb_id": "cloudflare",
+      "sources": [
+        "https://developers.cloudflare.com/workers/static-assets/",
+        "https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/",
+        "https://developers.cloudflare.com/workers/platform/pricing/"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "cdn",
+        "choice": "Built-in CDN of Cloudflare",
+        "justification": "Chosen because the hosting platform already serves through a global CDN; strong scalability (5/5) with priorities.scalability=5; strong cost efficiency (5/5) with priorities.cost=4; strong performance (5/5) with priorities.performance=3.",
+        "driven_by": [
+          "requirements.seo_critical",
+          "scale.users_12_months",
+          "project.type",
+          "priorities.scalability",
+          "priorities.cost",
+          "priorities.performance",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "Cloudflare CDN (free/pro plan)",
+            "why_not": "Cloudflare CDN (free/pro plan) starts around $25/month against a $50/month total budget. Built-in CDN of Cloudflare scores higher on integration with the hosting platform (fit 6.0 vs 8.5)."
+          },
+          {
+            "choice": "Amazon CloudFront",
+            "why_not": "Amazon CloudFront starts around $50/month against a $50/month total budget. Built-in CDN of Cloudflare scores higher on integration with the hosting platform and time-to-market (fit 1.2 vs 8.5)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 8.52,
+        "confidence": "high",
+        "kb_id": "host_cdn",
+        "sources": [
+          "https://vercel.com/docs",
+          "https://docs.netlify.com/",
+          "https://developers.cloudflare.com/workers/static-assets/"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "Git-push deploys on Cloudflare",
+        "justification": "Chosen because Git push deploys with previews are built into the hosting; strong cost efficiency (5/5) with priorities.cost=4; strong time-to-market (5/5) with priorities.time_to_market=3; strong scalability (4/5) with priorities.scalability=5.",
+        "driven_by": [
+          "team.has_devops",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "priorities.scalability",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "GitHub Actions",
+            "why_not": "GitHub Actions starts around $40/month against a $50/month total budget. Git-push deploys on Cloudflare scores higher on integration with the hosting platform (fit 2.4 vs 6.1)."
+          },
+          {
+            "choice": "Azure Pipelines",
+            "why_not": "Azure Pipelines starts around $60/month against a $50/month total budget. Git-push deploys on Cloudflare scores higher on integration with the hosting platform and cost (fit 0.2 vs 6.1)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.087,
+        "confidence": "high",
+        "kb_id": "host_git_deploy",
+        "sources": [
+          "https://vercel.com/docs",
+          "https://docs.netlify.com/",
+          "https://developers.cloudflare.com/workers/static-assets/"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Cloudflare analytics/logs",
+        "justification": "Chosen because static site: platform analytics are enough; strong cost efficiency (5/5) with priorities.cost=4; strong time-to-market (5/5) with priorities.time_to_market=3; fully managed: no operations work for a team without DevOps.",
+        "driven_by": [
+          "requirements.availability",
+          "project.type",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Sentry (errors + performance) starts around $80/month against a $50/month total budget. Cloudflare analytics/logs scores higher on fit for the project type and cost (fit 0.4 vs 5.0)."
+          },
+          {
+            "choice": "Prometheus + Grafana + Loki (self-hosted)",
+            "why_not": "Prometheus + Grafana + Loki (self-hosted) starts around $150/month against a $50/month total budget; needs ongoing operations work but team.has_devops=false (ops burden 3/5). Cloudflare analytics/logs scores higher on fit for the project type (fit -2.0 vs 5.0)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 4.953,
+        "confidence": "high",
+        "kb_id": "host_logs",
+        "sources": [
+          "https://vercel.com/docs",
+          "https://docs.netlify.com/",
+          "https://developers.cloudflare.com/workers/static-assets/"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 5,
+    "max": 100,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 2,000,000 users at 12 months, 40,000 peak concurrent users, ~4,000 req/s peak (scale tier: large)",
+      "Data: ~2 GB in the database, ~0 GB of media, ~9,766 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work"
+    ],
+    "breakdown": [
+      {
+        "component": "Cloudflare (Workers static assets / Pages) (global CDN)",
+        "min": 5.0,
+        "max": 100.0,
+        "basis": "large tier (~4,000 req/s peak, 40,000 concurrent users)"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "BUDGET_HEADROOM",
+      "severity": "info",
+      "message": "Expected $5-100/month: the upper end exceeds the $50 budget at peak usage. Set billing alerts.",
+      "fields": [
+        "budget.monthly_infra_usd"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "large",
+    "users_design_target": 2000000,
+    "peak_concurrent_users": 40000,
+    "peak_rps_estimate": 4000,
+    "data_gb": 2.0,
+    "db_gb": 2.0,
+    "media_gb": 0.0,
+    "egress_gb_month": 9765.6,
+    "primary_region": "us",
+    "effective_residency": "none",
+    "needs_backend": false,
+    "static_eligible": true,
+    "complex_domain": false,
+    "feature_points": 1.0,
+    "team_capacity": 20.0,
+    "effort_ratio": 0.05,
+    "background_jobs": false,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": [
+      "markdown_content"
+    ]
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "Astro",
+        "score": 11.122,
+        "status": "selected",
+        "top_factors": [
+          "+2.00 team already works in javascript (team.languages)",
+          "+1.80 static-first output for a content_site (scale.workload=read_heavy)",
+          "+1.60 server-rendered/pre-rendered HTML for seo_critical=true",
+          "+1.47 strong cost efficiency (5/5) with priorities.cost=4"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": 11.027,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in html (team.languages)",
+          "+1.80 static-first output for a content_site (scale.workload=read_heavy)",
+          "+1.60 server-rendered/pre-rendered HTML for seo_critical=true",
+          "+1.47 strong cost efficiency (5/5) with priorities.cost=4"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": 10.902,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in javascript (team.languages)",
+          "+1.80 static-first output for a content_site (scale.workload=read_heavy)",
+          "+1.60 server-rendered/pre-rendered HTML for seo_critical=true",
+          "+1.47 strong cost efficiency (5/5) with priorities.cost=4"
+        ]
+      },
+      {
+        "choice": "SvelteKit",
+        "score": 8.088,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in javascript (team.languages)",
+          "+1.60 server-rendered/pre-rendered HTML for seo_critical=true",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.73 strong cost efficiency (4/5) with priorities.cost=4"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Server-rendered templates + HTMX",
+        "score": null,
+        "status": "excluded",
+        "reason": "server-rendered templates need a running backend; this site is static",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [],
+    "database": [],
+    "database_offering": [],
+    "hosting": [
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": 9.33,
+        "status": "selected",
+        "top_factors": [
+          "+2.50 serves pre-built static files from a global CDN",
+          "+1.67 strong scalability (5/5) with priorities.scalability=5",
+          "+1.33 strong cost efficiency (5/5) with priorities.cost=4",
+          "+1.00 strong performance (5/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Firebase Hosting",
+        "score": 8.13,
+        "status": "candidate",
+        "top_factors": [
+          "+2.50 serves pre-built static files from a global CDN",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.83 strong scalability (4/5) with priorities.scalability=5",
+          "+0.67 strong cost efficiency (4/5) with priorities.cost=4"
+        ]
+      },
+      {
+        "choice": "Amazon S3 + CloudFront",
+        "score": 7.104,
+        "status": "candidate",
+        "top_factors": [
+          "+2.50 serves pre-built static files from a global CDN",
+          "+1.67 strong scalability (5/5) with priorities.scalability=5",
+          "+1.33 strong cost efficiency (5/5) with priorities.cost=4",
+          "-1.05 Amazon S3 + CloudFront starts around $40/month against a $50/month total budget"
+        ]
+      },
+      {
+        "choice": "Azure Static Web Apps",
+        "score": 6.297,
+        "status": "candidate",
+        "top_factors": [
+          "+2.50 serves pre-built static files from a global CDN",
+          "-1.40 Azure Static Web Apps starts around $50/month against a $50/month total budget",
+          "+1.33 strong cost efficiency (5/5) with priorities.cost=4",
+          "+0.83 strong scalability (4/5) with priorities.scalability=5"
+        ]
+      },
+      {
+        "choice": "Netlify",
+        "score": 5.646,
+        "status": "candidate",
+        "top_factors": [
+          "+2.50 serves pre-built static files from a global CDN",
+          "-2.48 Netlify starts around $99/month against a $50/month total budget",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.83 strong scalability (4/5) with priorities.scalability=5"
+        ]
+      },
+      {
+        "choice": "GitHub Pages",
+        "score": 5.497,
+        "status": "candidate",
+        "top_factors": [
+          "-2.50 designed for up to ~1,000,000 users; target is 2,000,000",
+          "+2.50 serves pre-built static files from a global CDN",
+          "+1.33 strong cost efficiency (5/5) with priorities.cost=4",
+          "+0.83 strong scalability (4/5) with priorities.scalability=5"
+        ]
+      },
+      {
+        "choice": "Amazon GameLift Servers",
+        "score": null,
+        "status": "excluded",
+        "reason": "dedicated game-server fleets: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "On-premise Linux servers + Docker Compose",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud is not on-premise",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "On-premise Kubernetes (RKE2 / k3s)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud is not on-premise",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Docker Compose on cloud VMs",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ]
+  }
+}

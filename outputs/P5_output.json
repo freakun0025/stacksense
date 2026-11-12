@@ -1,0 +1,1002 @@
+{
+  "scenario_id": "P5",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "1e006ccf40dc9e41",
+  "status": "ok",
+  "summary": "Monolith: ASP.NET Core + Azure SQL Database serving Blazor (ASP.NET Core), hosted on Azure App Service (Central India, Pune). Estimated $50-290/month (within the $300 budget).",
+  "architecture_style": "monolith",
+  "architecture_rationale": {
+    "text": "A single deployable is the fastest and cheapest option for a 2-person team building a internal_tool with 1,500 users. Over-engineering guard: microservices rejected: 2 engineer(s), no DevOps cannot absorb the operational overhead.",
+    "driven_by": [
+      "team.size",
+      "project.type",
+      "scale.users_12_months"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "Blazor (ASP.NET Core)",
+      "justification": "Web - Blazor (ASP.NET Core): Chosen because team already works in csharp (team.languages); strong maintainability (5/5) with priorities.maintainability=5; strong time-to-market (4/5) with priorities.time_to_market=5; strong security (5/5) with priorities.security=4.",
+      "driven_by": [
+        "team.languages",
+        "priorities.maintainability",
+        "project.type",
+        "priorities.time_to_market",
+        "priorities.security",
+        "infrastructure.existing_systems"
+      ],
+      "alternatives": [
+        {
+          "choice": "Vue + Vite (SPA)",
+          "why_not": "Blazor scores higher on maintainability and reuse of existing systems (fit 8.7 vs 9.4)."
+        },
+        {
+          "choice": "React + Vite (SPA)",
+          "why_not": "Blazor scores higher on maintainability and reuse of existing systems (fit 8.4 vs 9.4)."
+        }
+      ],
+      "tradeoffs": [
+        "Interactive Server mode keeps a SignalR circuit per user",
+        "WebAssembly mode has a larger first download"
+      ],
+      "fit_score": 9.432,
+      "confidence": "low",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "Blazor (ASP.NET Core)",
+          "version": ".NET 10 LTS",
+          "kb_id": "blazor"
+        }
+      ],
+      "sources": [
+        "https://learn.microsoft.com/aspnet/core/blazor/",
+        "https://learn.microsoft.com/aspnet/core/"
+      ]
+    },
+    "backend": {
+      "choice": "ASP.NET Core (.NET 10 LTS)",
+      "justification": "Chosen because team already works in csharp (team.languages); strong maintainability (5/5) with priorities.maintainability=5; strong security (5/5) with priorities.security=4; Microsoft.Identity.Web makes Entra ID SSO a configuration task.",
+      "driven_by": [
+        "team.languages",
+        "priorities.maintainability",
+        "priorities.security",
+        "infrastructure.existing_systems",
+        "priorities.time_to_market",
+        "priorities.performance"
+      ],
+      "alternatives": [
+        {
+          "choice": "Serverless functions",
+          "why_not": "Sync batches and large uploads run into function time/size limits. ASP.NET Core scores higher on maintainability and reuse of existing systems (fit 9.1 vs 11.0)."
+        },
+        {
+          "choice": "PocketBase",
+          "why_not": "Younger ecosystem: fewer libraries and hires. ASP.NET Core scores higher on security and reuse of existing systems (fit 7.4 vs 11.0)."
+        },
+        {
+          "choice": "Firebase (Firestore + Auth + Functions)",
+          "why_not": "Excluded by hard constraint: cloud_preference=azure: Firebase (Firestore + Auth + Functions) is a Google Cloud service."
+        }
+      ],
+      "tradeoffs": [
+        "Best tooling on Windows/Azure (runs everywhere)"
+      ],
+      "fit_score": 11.047,
+      "confidence": "medium",
+      "kb_id": "aspnet_core",
+      "version": ".NET 10 LTS",
+      "sources": [
+        "https://learn.microsoft.com/aspnet/core/",
+        "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+        "https://www.techempower.com/benchmarks/"
+      ]
+    },
+    "database": {
+      "choice": "Azure SQL Database (Central India, Pune)",
+      "justification": "Chosen because reuses the existing 'On-prem SQL Server 2019'; relational integrity and transactions for a internal_tool domain; strong security (5/5) with priorities.security=4; strong maintainability (4/5) with priorities.maintainability=5. Managed as Azure SQL Database: same platform and private network as the application hosting; fully managed: no operations work for a team without DevOps.",
+      "driven_by": [
+        "infrastructure.existing_systems",
+        "project.type",
+        "priorities.security",
+        "priorities.maintainability",
+        "priorities.time_to_market",
+        "infrastructure.cloud_preference",
+        "priorities.cost",
+        "requirements.availability",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "PostgreSQL",
+          "why_not": "Azure SQL Database scores higher on reuse of existing systems and cloud preference (fit 7.7 vs 9.0)."
+        },
+        {
+          "choice": "TimescaleDB (PostgreSQL extension)",
+          "why_not": "Azure SQL Database scores higher on reuse of existing systems and cloud preference (fit 6.2 vs 9.0)."
+        },
+        {
+          "choice": "Google BigQuery",
+          "why_not": "Excluded by hard constraint: cloud_preference=azure: Google BigQuery is a Google Cloud service."
+        },
+        {
+          "choice": "Amazon RDS for SQL Server",
+          "why_not": "Excluded by hard constraint: cloud_preference=azure: Amazon RDS for SQL Server is a AWS service."
+        }
+      ],
+      "tradeoffs": [
+        "Licence cost outside Azure SQL's managed tiers",
+        "Weaker cost efficiency (2/5) with priorities.cost=3"
+      ],
+      "fit_score": 9.0,
+      "confidence": "medium",
+      "kb_id": "sqlserver",
+      "sources": [
+        "https://learn.microsoft.com/azure/azure-sql/database/",
+        "https://learn.microsoft.com/lifecycle/products/sql-server-2019",
+        "https://db-engines.com/en/ranking"
+      ],
+      "engine": "SQL Server (Azure SQL)",
+      "offering": "Azure SQL Database",
+      "offering_kb_id": "azure_sql_db"
+    },
+    "hosting": {
+      "choice": "Azure App Service (Central India, Pune)",
+      "justification": "Chosen because strong security (5/5) with priorities.security=4; .NET-native hosting with deployment slots and built-in Entra auth; strong maintainability (4/5) with priorities.maintainability=5; strong time-to-market (4/5) with priorities.time_to_market=5.",
+      "driven_by": [
+        "priorities.security",
+        "priorities.maintainability",
+        "priorities.time_to_market",
+        "infrastructure.existing_systems",
+        "team.has_devops",
+        "priorities.performance"
+      ],
+      "alternatives": [
+        {
+          "choice": "Azure Container Apps",
+          "why_not": "Azure App Service scores higher on integration with the backend and reuse of existing systems (fit 5.4 vs 6.8)."
+        },
+        {
+          "choice": "Managed Kubernetes (EKS / GKE / AKS)",
+          "why_not": "Needs ongoing operations work but team.has_devops=false (ops burden 5/5); over-engineering for 1,500 users (pays off beyond ~1,000,000) (fit -8.5 vs 6.8)."
+        },
+        {
+          "choice": "Google Cloud Run",
+          "why_not": "Excluded by hard constraint: cloud_preference=azure: Google Cloud Run is a Google Cloud service."
+        }
+      ],
+      "tradeoffs": [
+        "Per-plan pricing, no scale-to-zero"
+      ],
+      "fit_score": 6.83,
+      "confidence": "medium",
+      "kb_id": "app_service",
+      "sources": [
+        "https://learn.microsoft.com/azure/app-service/",
+        "https://learn.microsoft.com/azure/app-service/app-service-hybrid-connections",
+        "https://azure.microsoft.com/pricing/details/app-service/linux/"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "queue",
+        "choice": "Hangfire (SQL Server storage) (jobs in the primary database)",
+        "justification": "Chosen because no extra infrastructure at small scale; jobs commit with business data; strong time-to-market (5/5) with priorities.time_to_market=5; lives in the primary database already in the stack; strong cost efficiency (5/5) with priorities.cost=3.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "scale.users_12_months",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.security",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Service Bus",
+            "why_not": "Hangfire scores higher on fit for the user scale and integration with the database (fit 6.0 vs 6.7)."
+          },
+          {
+            "choice": "RabbitMQ (self-hosted)",
+            "why_not": "Needs ongoing operations work but team.has_devops=false (ops burden 3/5). Hangfire scores higher on fit for the user scale and time-to-market (fit 0.2 vs 6.7)."
+          },
+          {
+            "choice": "Google Cloud Tasks / Pub/Sub",
+            "why_not": "Excluded by hard constraint: cloud_preference=azure: Google Cloud Tasks / Pub/Sub is a Google Cloud service."
+          }
+        ],
+        "tradeoffs": [
+          "Throughput bounded by the primary database"
+        ],
+        "fit_score": 6.67,
+        "confidence": "low",
+        "kb_id": "pg_queue",
+        "sources": [
+          "https://github.com/timgit/pg-boss",
+          "https://www.jobrunr.io/en/documentation/",
+          "https://www.hangfire.io/"
+        ]
+      },
+      {
+        "layer": "auth",
+        "choice": "Microsoft Entra ID",
+        "justification": "Chosen because reuses the existing 'Microsoft Entra ID (Azure AD)'; strong maintainability (5/5) with priorities.maintainability=5; strong time-to-market (5/5) with priorities.time_to_market=5; same cloud/platform and region as the application.",
+        "driven_by": [
+          "requirements.auth",
+          "infrastructure.existing_systems",
+          "priorities.maintainability",
+          "priorities.time_to_market",
+          "priorities.security",
+          "priorities.cost",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Keycloak (self-hosted)",
+            "why_not": "Needs ongoing operations work but team.has_devops=false (ops burden 3/5). Microsoft Entra ID scores higher on reuse of existing systems and time-to-market (fit 1.2 vs 9.8)."
+          },
+          {
+            "choice": "Firebase Authentication",
+            "why_not": "Excluded by hard constraint: cloud_preference=azure: Firebase Authentication is a Google Cloud service."
+          }
+        ],
+        "tradeoffs": [
+          "For workforce identity; customer identity needs External ID"
+        ],
+        "fit_score": 9.753,
+        "confidence": "high",
+        "kb_id": "entra_id",
+        "sources": [
+          "https://learn.microsoft.com/entra/identity/",
+          "https://learn.microsoft.com/entra/msal/dotnet/microsoft-identity-web/"
+        ]
+      },
+      {
+        "layer": "storage",
+        "choice": "Azure Blob Storage (Central India, Pune)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong maintainability (5/5) with priorities.maintainability=5; strong security (5/5) with priorities.security=4; strong time-to-market (4/5) with priorities.time_to_market=5.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "priorities.maintainability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.performance",
+          "priorities.cost",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "SeaweedFS (self-hosted S3-compatible)",
+            "why_not": "Needs ongoing operations work but team.has_devops=false (ops burden 3/5); self-hosting another service when a managed option exists. Azure Blob Storage scores higher on integration with the hosting platform (fit 0.6 vs 6.6)."
+          },
+          {
+            "choice": "Ceph RGW (self-hosted S3-compatible)",
+            "why_not": "Over-engineering for 1,500 users (pays off beyond ~100,000); needs ongoing operations work but team.has_devops=false (ops burden 5/5). Azure Blob Storage scores higher on integration with the hosting platform (fit -6.1 vs 6.6)."
+          },
+          {
+            "choice": "Google Cloud Storage",
+            "why_not": "Excluded by hard constraint: cloud_preference=azure: Google Cloud Storage is a Google Cloud service."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.553,
+        "confidence": "high",
+        "kb_id": "azure_blob",
+        "sources": [
+          "https://azure.microsoft.com/pricing/details/storage/blobs/"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "Azure Pipelines",
+        "justification": "Chosen because same cloud/platform and region as the application; strong security (5/5) with priorities.security=4; strong maintainability (4/5) with priorities.maintainability=5; strong time-to-market (4/5) with priorities.time_to_market=5.",
+        "driven_by": [
+          "team.has_devops",
+          "priorities.security",
+          "priorities.maintainability",
+          "priorities.time_to_market",
+          "infrastructure.existing_systems",
+          "priorities.cost"
+        ],
+        "alternatives": [
+          {
+            "choice": "GitHub Actions",
+            "why_not": "Azure Pipelines scores higher on integration with the hosting platform and reuse of existing systems (fit 5.1 vs 6.2)."
+          },
+          {
+            "choice": "GitLab CI (self-managed)",
+            "why_not": "Self-hosting CI is unnecessary; needs ongoing operations work but team.has_devops=false (ops burden 3/5). Azure Pipelines scores higher on integration with the hosting platform (fit 0.4 vs 6.2)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.236,
+        "confidence": "medium",
+        "kb_id": "azure_pipelines",
+        "sources": [
+          "https://learn.microsoft.com/azure/devops/pipelines/"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Azure Monitor Application Insights (Central India, Pune)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong time-to-market (5/5) with priorities.time_to_market=5; strong security (5/5) with priorities.security=4; strong maintainability (4/5) with priorities.maintainability=5.",
+        "driven_by": [
+          "requirements.availability",
+          "priorities.time_to_market",
+          "priorities.security",
+          "priorities.maintainability",
+          "priorities.cost",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Google Cloud Logging + Monitoring",
+            "why_not": "Different cloud from the application hosting (fit 1.8 vs 6.3)."
+          },
+          {
+            "choice": "Amazon CloudWatch + X-Ray (OpenTelemetry)",
+            "why_not": "Different cloud from the application hosting. Azure Monitor Application Insights scores higher on time-to-market (fit 1.2 vs 6.3)."
+          },
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "CERT-In requires ICT logs to be retained for 180 days within India"
+        ],
+        "fit_score": 6.32,
+        "confidence": "high",
+        "kb_id": "app_insights",
+        "sources": [
+          "https://learn.microsoft.com/azure/azure-monitor/app/app-insights-overview"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "transactional notifications",
+        "choice": "Microsoft Graph (Outlook/Teams notifications)",
+        "justification": "Chosen because reuses the existing 'Microsoft 365'; same cloud/platform and region as the application; strong time-to-market (5/5) with priorities.time_to_market=5; strong security (5/5) with priorities.security=4.",
+        "driven_by": [
+          "project.description",
+          "infrastructure.existing_systems",
+          "priorities.time_to_market",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon SES",
+            "why_not": "Different cloud from the application hosting. Microsoft Graph scores higher on reuse of existing systems and time-to-market (fit 1.6 vs 10.7)."
+          },
+          {
+            "choice": "On-prem SMTP relay",
+            "why_not": "In-network SMTP relay. Microsoft Graph scores higher on reuse of existing systems and integration with the hosting platform (fit -0.4 vs 10.7)."
+          },
+          {
+            "choice": "Resend",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 10.67,
+        "confidence": "high",
+        "kb_id": "graph_mail",
+        "sources": [
+          "https://learn.microsoft.com/graph/overview"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "security and compliance controls",
+        "choice": "Azure Key Vault + Defender for Cloud + Front Door WAF (Central India, Pune)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong security (5/5) with priorities.security=4; strong maintainability (4/5) with priorities.maintainability=5; strong time-to-market (4/5) with priorities.time_to_market=5.",
+        "driven_by": [
+          "compliance",
+          "priorities.security",
+          "priorities.maintainability",
+          "priorities.time_to_market",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "HashiCorp Vault/OpenBao + ModSecurity WAF (self-hosted)",
+            "why_not": "Needs ongoing operations work but team.has_devops=false (ops burden 3/5); self-hosting another service when a managed option exists. Azure Key Vault + Defender for Cloud + Front Door WAF scores higher on integration with the hosting platform (fit 0.7 vs 5.4)."
+          },
+          {
+            "choice": "Cloud Armor + Secret Manager + Cloud KMS",
+            "why_not": "Excluded by hard constraint: cloud_preference=azure: Cloud Armor + Secret Manager + Cloud KMS is a Google Cloud service."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.386,
+        "confidence": "high",
+        "kb_id": "azure_sec",
+        "sources": [
+          "https://learn.microsoft.com/azure/key-vault/"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "integration with existing on-prem systems",
+        "choice": "Azure App Service Hybrid Connection (to on-prem) (Central India, Pune)",
+        "justification": "Chosen because native to App Service; same cloud/platform and region as the application; strong time-to-market (5/5) with priorities.time_to_market=5; strong cost efficiency (5/5) with priorities.cost=3.",
+        "driven_by": [
+          "infrastructure.existing_systems",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.security",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Site-to-site VPN / private interconnect to on-prem",
+            "why_not": "Azure App Service Hybrid Connection scores higher on integration with the hosting platform and time-to-market (fit 1.9 vs 9.0)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 8.97,
+        "confidence": "high",
+        "kb_id": "hybrid_link",
+        "sources": [
+          "https://learn.microsoft.com/azure/app-service/app-service-hybrid-connections"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 50,
+    "max": 290,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 1,500 users at 12 months, 300 peak concurrent users, ~30 req/s peak (scale tier: small)",
+      "Data: ~6 GB in the database, ~14 GB of media, ~44 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work"
+    ],
+    "breakdown": [
+      {
+        "component": "Azure App Service (Central India, Pune)",
+        "min": 13.0,
+        "max": 75.0,
+        "basis": "small tier (~30 req/s peak, 300 concurrent users)"
+      },
+      {
+        "component": "Azure SQL Database",
+        "min": 15.0,
+        "max": 75.0,
+        "basis": "small tier instance"
+      },
+      {
+        "component": "Microsoft Entra ID",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "1,500 MAU (within free tier)"
+      },
+      {
+        "component": "Azure Blob Storage (Central India, Pune)",
+        "min": 2.36,
+        "max": 2.59,
+        "basis": "14 GB stored, ~26 GB/month served"
+      },
+      {
+        "component": "Azure Pipelines",
+        "min": 0.0,
+        "max": 15.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Azure Monitor Application Insights (Central India, Pune)",
+        "min": 0.0,
+        "max": 30.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Azure Key Vault + Defender for Cloud + Front Door WAF (Central India, Pune)",
+        "min": 20.0,
+        "max": 80.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Azure App Service Hybrid Connection (to on-prem) (Central India, Pune)",
+        "min": 0.0,
+        "max": 10.0,
+        "basis": "small tier"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "CERTIFICATION_IS_PROCESS",
+      "severity": "info",
+      "message": "ISO 27001/SOC 2 certify your controls, not the stack: providers with attestations were chosen so you inherit their controls, but you still need policies, access reviews and audits.",
+      "fields": [
+        "compliance"
+      ]
+    },
+    {
+      "code": "CERT_IN_LOGS",
+      "severity": "info",
+      "message": "CERT-In Directions (2022): keep ICT system logs for 180 days within Indian jurisdiction.",
+      "fields": [
+        "infrastructure.data_residency"
+      ]
+    },
+    {
+      "code": "EXISTING_SYSTEM_RENAMED",
+      "severity": "info",
+      "message": "'Microsoft Entra ID (Azure AD)': Renamed only; fully supported. Treated as Microsoft Entra ID (same service).",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "EXISTING_SYSTEM_REUSED",
+      "severity": "info",
+      "message": "'Microsoft 365': reused for notifications/approvals through Microsoft Graph (Outlook/Teams).",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "EXISTING_SYSTEM_REUSED",
+      "severity": "info",
+      "message": "'Microsoft Entra ID (Azure AD)': reused as the identity provider (OIDC/SAML SSO, group-based roles).",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "EXISTING_SYSTEM_REUSED",
+      "severity": "info",
+      "message": "'On-prem SQL Server 2019': kept as the system of record for existing data and integrated via an App Service Hybrid Connection; new data lives in SQL Server (Azure SQL) (migrate with Azure DMS/AWS DMS when ready).",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "EXTENDED_SUPPORT_DEPENDENCY",
+      "severity": "info",
+      "message": "'On-prem SQL Server 2019' (SQL Server 2019) is out of mainstream support; security fixes only until 2030-01-08. Mainstream support ended 28 Feb 2025; security updates only. Plan an upgrade to SQL Server 2022/2025 or Azure SQL.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "small",
+    "users_design_target": 1500,
+    "peak_concurrent_users": 300,
+    "peak_rps_estimate": 30,
+    "data_gb": 20.0,
+    "db_gb": 6.0,
+    "media_gb": 14.0,
+    "egress_gb_month": 43.9,
+    "primary_region": "india",
+    "effective_residency": "india",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": false,
+    "feature_points": 5.5,
+    "team_capacity": 12.0,
+    "effort_ratio": 0.46,
+    "background_jobs": true,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": [
+      "workflow"
+    ]
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "Blazor (ASP.NET Core)",
+        "score": 9.432,
+        "status": "selected",
+        "top_factors": [
+          "+2.88 team already works in csharp (team.languages)",
+          "+1.83 strong maintainability (5/5) with priorities.maintainability=5",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.88 strong security (5/5) with priorities.security=4"
+        ]
+      },
+      {
+        "choice": "Vue + Vite (SPA)",
+        "score": 8.675,
+        "status": "candidate",
+        "top_factors": [
+          "+2.88 team already works in javascript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.92 strong maintainability (4/5) with priorities.maintainability=5",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "React + Vite (SPA)",
+        "score": 8.375,
+        "status": "candidate",
+        "top_factors": [
+          "+2.88 team already works in javascript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.92 strong maintainability (4/5) with priorities.maintainability=5",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "Server-rendered templates + HTMX",
+        "score": 7.975,
+        "status": "candidate",
+        "top_factors": [
+          "+2.88 team already works in csharp (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.92 strong maintainability (4/5) with priorities.maintainability=5",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive internal_tool",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive internal_tool",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "ASP.NET Core (.NET 10 LTS)",
+        "score": 11.047,
+        "status": "selected",
+        "top_factors": [
+          "+2.88 team already works in csharp (team.languages)",
+          "+1.83 strong maintainability (5/5) with priorities.maintainability=5",
+          "+1.47 strong security (5/5) with priorities.security=4",
+          "+1.20 Microsoft.Identity.Web makes Entra ID SSO a configuration task"
+        ]
+      },
+      {
+        "choice": "Serverless functions",
+        "score": 9.08,
+        "status": "candidate",
+        "top_factors": [
+          "+2.88 team already works in javascript (team.languages)",
+          "+1.83 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.80 low, bursty load suits pay-per-request functions"
+        ]
+      },
+      {
+        "choice": "PocketBase",
+        "score": 7.447,
+        "status": "candidate",
+        "top_factors": [
+          "+2.88 team already works in javascript (team.languages)",
+          "+1.83 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "+1.20 BaaS covers auth, data and storage without writing server code",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "NestJS (Node.js LTS, TypeScript)",
+        "score": 7.347,
+        "status": "candidate",
+        "top_factors": [
+          "+2.88 team already works in javascript (team.languages)",
+          "+1.83 strong maintainability (5/5) with priorities.maintainability=5",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.73 strong security (4/5) with priorities.security=4"
+        ]
+      },
+      {
+        "choice": "Fastify (Node.js LTS, TypeScript)",
+        "score": 6.18,
+        "status": "candidate",
+        "top_factors": [
+          "+2.88 team already works in javascript (team.languages)",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.73 strong security (4/5) with priorities.security=4",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Express (Node.js LTS)",
+        "score": 5.447,
+        "status": "candidate",
+        "top_factors": [
+          "+2.88 team already works in javascript (team.languages)",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.60 gentle learning curve suits a intermediate team on a 6-week timeline",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=azure: Firebase (Firestore + Auth + Functions) is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Next.js full-stack (Route Handlers + Server Actions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "only applies when the web frontend is Next.js",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks ISO 27001 (compliance includes iso27001)",
+        "fields": [
+          "compliance"
+        ]
+      },
+      {
+        "choice": "Appwrite",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "SQL Server (Azure SQL)",
+        "score": 9.0,
+        "status": "selected",
+        "top_factors": [
+          "+2.50 reuses the existing 'On-prem SQL Server 2019'",
+          "+1.50 relational integrity and transactions for a internal_tool domain",
+          "+1.47 strong security (5/5) with priorities.security=4",
+          "+0.92 strong maintainability (4/5) with priorities.maintainability=5"
+        ]
+      },
+      {
+        "choice": "PostgreSQL",
+        "score": 7.717,
+        "status": "candidate",
+        "top_factors": [
+          "+1.83 strong maintainability (5/5) with priorities.maintainability=5",
+          "+1.50 relational integrity and transactions for a internal_tool domain",
+          "+1.47 strong security (5/5) with priorities.security=4",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": 6.183,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a internal_tool domain",
+          "+0.92 strong maintainability (4/5) with priorities.maintainability=5",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.73 strong performance (5/5) with priorities.performance=2"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": 6.067,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a internal_tool domain",
+          "+0.92 strong maintainability (4/5) with priorities.maintainability=5",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.73 strong security (4/5) with priorities.security=4"
+        ]
+      },
+      {
+        "choice": "SQLite (embedded) + Litestream",
+        "score": 5.35,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 single embedded file cannot serve multiple instances or HA",
+          "+1.83 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "+1.50 relational integrity and transactions for a internal_tool domain",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "MongoDB",
+        "score": 2.65,
+        "status": "candidate",
+        "top_factors": [
+          "+1.83 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "-1.00 money/relational data needs multi-row ACID guarantees",
+          "+0.73 strong security (4/5) with priorities.security=4",
+          "+0.50 mature, widely adopted technology with a large ecosystem"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=azure: Google BigQuery is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Amazon DynamoDB",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=azure: Amazon DynamoDB is a AWS service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Cloud Firestore",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=azure: Cloud Firestore is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Azure SQL Database",
+        "score": 3.337,
+        "status": "selected",
+        "top_factors": [
+          "+3.00 same platform and private network as the application hosting",
+          "-0.46 ~$15+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Amazon RDS for SQL Server",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=azure: Amazon RDS for SQL Server is a AWS service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "SQL Server 2022 (self-managed)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "Azure App Service",
+        "score": 6.83,
+        "status": "selected",
+        "top_factors": [
+          "+1.33 strong security (5/5) with priorities.security=4",
+          "+1.00 .NET-native hosting with deployment slots and built-in Entra auth",
+          "+0.83 strong maintainability (4/5) with priorities.maintainability=5",
+          "+0.83 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "Azure Container Apps",
+        "score": 5.416,
+        "status": "candidate",
+        "top_factors": [
+          "+1.33 strong security (5/5) with priorities.security=4",
+          "+1.00 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.83 strong maintainability (4/5) with priorities.maintainability=5",
+          "+0.83 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "Managed Kubernetes (EKS / GKE / AKS)",
+        "score": -8.513,
+        "status": "candidate",
+        "top_factors": [
+          "-4.00 over-engineering for 1,500 users (pays off beyond ~1,000,000)",
+          "-3.24 needs ongoing operations work but team.has_devops=false (ops burden 5/5)",
+          "-2.50 Kubernetes needs a platform team; 2 engineer(s) without DevOps",
+          "+1.33 strong security (5/5) with priorities.security=4"
+        ]
+      },
+      {
+        "choice": "AWS Amplify Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=azure: AWS Amplify Hosting is a AWS service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Azure Static Web Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "AWS Elastic Beanstalk",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=azure: AWS Elastic Beanstalk is a AWS service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Google Cloud Run",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=azure: Google Cloud Run is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=azure: Cloudflare (Workers static assets / Pages) runs outside Azure",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "DigitalOcean App Platform",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=azure: DigitalOcean App Platform runs outside Azure",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      }
+    ]
+  }
+}

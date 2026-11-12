@@ -1,0 +1,909 @@
+{
+  "scenario_id": "E13",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "9008ee488c0a2177",
+  "status": "ok_with_warnings",
+  "summary": "Modular monolith: ASP.NET Core + Cloud SQL for PostgreSQL serving Vue + Vite (SPA), hosted on Google Cloud Run (us-central1 Iowa). Estimated $19-90/month (within the $200 budget).",
+  "architecture_style": "modular_monolith",
+  "architecture_rationale": {
+    "text": "One deployable with strict internal modules for the saas_b2b domain: a 5-engineer team gets clear boundaries without distributed-system overhead; modules can be extracted later if scale demands it. Over-engineering guard: microservices rejected: 5 engineer(s), no DevOps cannot absorb the operational overhead.",
+    "driven_by": [
+      "team.size",
+      "project.type",
+      "team.has_devops"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "Vue + Vite (SPA)",
+      "justification": "Web - Vue + Vite (SPA): Chosen because team already works in javascript (team.languages); strong cost efficiency (5/5) with priorities.cost=3; rich client-side interactivity for a saas_b2b; strong maintainability (4/5) with priorities.maintainability=3.",
+      "driven_by": [
+        "team.languages",
+        "priorities.cost",
+        "priorities.maintainability",
+        "project.type",
+        "priorities.performance",
+        "priorities.time_to_market"
+      ],
+      "alternatives": [
+        {
+          "choice": "React + Vite (SPA)",
+          "why_not": "Vue + Vite scores higher on learning curve (fit 6.7 vs 7.0)."
+        },
+        {
+          "choice": "Blazor (ASP.NET Core)",
+          "why_not": "Vue + Vite scores higher on cost and operational simplicity (fit 6.5 vs 7.0)."
+        }
+      ],
+      "tradeoffs": [],
+      "fit_score": 7.045,
+      "confidence": "low",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "Vue + Vite (SPA)",
+          "version": "Vue 3",
+          "kb_id": "vue_vite"
+        }
+      ],
+      "sources": [
+        "https://vuejs.org/guide/",
+        "https://vite.dev/guide/"
+      ]
+    },
+    "backend": {
+      "choice": "ASP.NET Core (.NET 10 LTS)",
+      "justification": "Chosen because team already works in csharp (team.languages); strong maintainability (5/5) with priorities.maintainability=3; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3.",
+      "driven_by": [
+        "team.languages",
+        "priorities.maintainability",
+        "priorities.performance",
+        "priorities.scalability",
+        "priorities.security",
+        "project.type"
+      ],
+      "alternatives": [
+        {
+          "choice": "NestJS (Node.js LTS, TypeScript)",
+          "why_not": "ASP.NET Core scores higher on performance and scalability (fit 6.8 vs 8.6)."
+        },
+        {
+          "choice": "Serverless functions",
+          "why_not": "A saas_b2b domain needs a structured service, not scattered functions. ASP.NET Core scores higher on maintainability and performance (fit 6.5 vs 8.6)."
+        }
+      ],
+      "tradeoffs": [
+        "Best tooling on Windows/Azure (runs everywhere)"
+      ],
+      "fit_score": 8.6,
+      "confidence": "medium",
+      "kb_id": "aspnet_core",
+      "version": ".NET 10 LTS",
+      "sources": [
+        "https://learn.microsoft.com/aspnet/core/",
+        "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+        "https://www.techempower.com/benchmarks/"
+      ]
+    },
+    "database": {
+      "choice": "Cloud SQL for PostgreSQL (us-central1 Iowa, HA standby)",
+      "justification": "Chosen because relational integrity and transactions for a saas_b2b domain; strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3; strong cost efficiency (4/5) with priorities.cost=3. Managed as Cloud SQL for PostgreSQL: same platform and private network as the application hosting; fully managed: no operations work for a team without DevOps.",
+      "driven_by": [
+        "project.type",
+        "priorities.maintainability",
+        "priorities.security",
+        "priorities.cost",
+        "priorities.performance",
+        "priorities.scalability",
+        "requirements.availability",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "MySQL",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on maintainability and security (fit 6.6 vs 6.7)."
+        },
+        {
+          "choice": "TimescaleDB (PostgreSQL extension)",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on maintainability and security (fit 5.5 vs 6.7)."
+        },
+        {
+          "choice": "Render Postgres",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on integration with the hosting platform (fit 0.5 vs 3.4)."
+        },
+        {
+          "choice": "Self-managed PostgreSQL (Patroni/pgBackRest)",
+          "why_not": "Excluded by hard constraint: deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services."
+        }
+      ],
+      "tradeoffs": [
+        "Single-writer primary: write scale beyond one large node needs partitioning/sharding",
+        "Vacuum and connection pooling need attention at scale"
+      ],
+      "fit_score": 6.7,
+      "confidence": "low",
+      "kb_id": "postgresql",
+      "version": "PostgreSQL 17/18",
+      "sources": [
+        "https://www.postgresql.org/docs/",
+        "https://www.postgresql.org/docs/current/textsearch.html",
+        "https://postgis.net/documentation/"
+      ],
+      "engine": "PostgreSQL",
+      "offering": "Cloud SQL for PostgreSQL",
+      "offering_kb_id": "cloudsql_pg"
+    },
+    "hosting": {
+      "choice": "Google Cloud Run (us-central1 Iowa)",
+      "justification": "Chosen because strong cost efficiency (5/5) with priorities.cost=3; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; runs the ASP.NET Core (.NET 10 LTS) container as-is.",
+      "driven_by": [
+        "priorities.cost",
+        "priorities.scalability",
+        "priorities.security",
+        "priorities.maintainability",
+        "priorities.performance",
+        "priorities.time_to_market"
+      ],
+      "alternatives": [
+        {
+          "choice": "Azure App Service",
+          "why_not": "Google Cloud Run scores higher on cost and scalability (fit 5.4 vs 5.9)."
+        },
+        {
+          "choice": "DigitalOcean App Platform",
+          "why_not": "Google Cloud Run scores higher on cost and scalability (fit 5.2 vs 5.9)."
+        },
+        {
+          "choice": "GitHub Pages",
+          "why_not": "Excluded by hard constraint: lacks SOC 2 (compliance includes soc2)."
+        }
+      ],
+      "tradeoffs": [
+        "Session affinity is best-effort for stateful rooms"
+      ],
+      "fit_score": 5.93,
+      "confidence": "low",
+      "kb_id": "cloud_run",
+      "sources": [
+        "https://cloud.google.com/run/docs",
+        "https://cloud.google.com/run/pricing",
+        "https://cloud.google.com/run/docs/triggering/websockets"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "auth",
+        "choice": "WorkOS (AuthKit + SSO)",
+        "justification": "Chosen because organisations/teams model for multi-tenant B2B; strong security (5/5) with priorities.security=3; strong time-to-market (5/5) with priorities.time_to_market=3; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "requirements.auth",
+          "requirements.multi_tenant",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Auth0 (Okta)",
+            "why_not": "Weaker cost efficiency (2/5) with priorities.cost=3 (fit 3.6 vs 3.8)."
+          },
+          {
+            "choice": "Framework-native authentication",
+            "why_not": "WorkOS scores higher on multi-tenancy and security (fit 3.6 vs 3.8)."
+          }
+        ],
+        "tradeoffs": [
+          "SSO connections billed per connection"
+        ],
+        "fit_score": 3.77,
+        "confidence": "low",
+        "kb_id": "workos",
+        "sources": [
+          "https://workos.com/docs"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "GitHub Actions",
+        "justification": "Chosen because free minutes, large action marketplace, works with any cloud; strong cost efficiency (5/5) with priorities.cost=3; strong maintainability (5/5) with priorities.maintainability=3; strong scalability (5/5) with priorities.scalability=3.",
+        "driven_by": [
+          "team.has_devops",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.performance",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Pipelines",
+            "why_not": "Different cloud from the application hosting. GitHub Actions scores higher on time-to-market and cost (fit 1.1 vs 4.6)."
+          },
+          {
+            "choice": "GitLab CI (self-managed)",
+            "why_not": "Self-hosting CI is unnecessary; needs ongoing operations work but team.has_devops=false (ops burden 3/5). GitHub Actions scores higher on time-to-market (fit 0.3 vs 4.6)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 4.62,
+        "confidence": "high",
+        "kb_id": "github_actions",
+        "sources": [
+          "https://docs.github.com/actions"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Google Cloud Logging + Monitoring (us-central1 Iowa)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong time-to-market (5/5) with priorities.time_to_market=3.",
+        "driven_by": [
+          "requirements.availability",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Google Cloud Logging + Monitoring scores higher on integration with the hosting platform and scalability (fit 3.6 vs 6.0)."
+          },
+          {
+            "choice": "Azure Monitor Application Insights",
+            "why_not": "Different cloud from the application hosting (fit 1.5 vs 6.0)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.97,
+        "confidence": "high",
+        "kb_id": "gcp_ops",
+        "sources": [
+          "https://cloud.google.com/stackdriver/docs"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "transactional notifications",
+        "choice": "Resend",
+        "justification": "Chosen because strong time-to-market (5/5) with priorities.time_to_market=3; strong cost efficiency (4/5) with priorities.cost=3; strong maintainability (4/5) with priorities.maintainability=3; strong performance (4/5) with priorities.performance=3.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon SES",
+            "why_not": "Different cloud from the application hosting. Resend scores higher on time-to-market (fit 1.5 vs 2.8)."
+          },
+          {
+            "choice": "On-prem SMTP relay",
+            "why_not": "In-network SMTP relay. Resend scores higher on maintainability and performance (fit -0.6 vs 2.8)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 2.77,
+        "confidence": "medium",
+        "kb_id": "resend",
+        "sources": [
+          "https://resend.com/docs"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "security and compliance controls",
+        "choice": "Cloud Armor + Secret Manager + Cloud KMS (us-central1 Iowa)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "compliance",
+          "priorities.security",
+          "priorities.scalability",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.time_to_market",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Key Vault + Defender for Cloud + Front Door WAF",
+            "why_not": "Different cloud from the application hosting (fit 0.8 vs 5.3)."
+          },
+          {
+            "choice": "AWS WAF + KMS + Secrets Manager + CloudTrail/GuardDuty",
+            "why_not": "Different cloud from the application hosting (fit 0.8 vs 5.3)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.27,
+        "confidence": "high",
+        "kb_id": "gcp_sec",
+        "sources": [
+          "https://cloud.google.com/security/compliance/offerings"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 19,
+    "max": 90,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 5,000 users at 12 months, 100 peak concurrent users, ~15 req/s peak (scale tier: tiny)",
+      "Data: ~10 GB in the database, ~0 GB of media, ~73 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work"
+    ],
+    "breakdown": [
+      {
+        "component": "Google Cloud Run (us-central1 Iowa)",
+        "min": 0.0,
+        "max": 5.0,
+        "basis": "tiny tier (~15 req/s peak, 100 concurrent users)"
+      },
+      {
+        "component": "Cloud SQL for PostgreSQL",
+        "min": 14.4,
+        "max": 48.0,
+        "basis": "tiny tier instance; x1.6 for standby/replicas (availability 99.9%)"
+      },
+      {
+        "component": "WorkOS (AuthKit + SSO)",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "5,000 MAU (within free tier)"
+      },
+      {
+        "component": "Google Cloud Logging + Monitoring (us-central1 Iowa)",
+        "min": 0.0,
+        "max": 5.0,
+        "basis": "tiny tier"
+      },
+      {
+        "component": "Cloud Armor + Secret Manager + Cloud KMS (us-central1 Iowa)",
+        "min": 5.0,
+        "max": 30.0,
+        "basis": "tiny tier"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "END_OF_LIFE_DEPENDENCY",
+      "severity": "critical",
+      "message": "'MongoDB Realm Device Sync' matches MongoDB Atlas Device Sync / Realm Sync, end of life since 2025-09-30. It is not recommended; migrate to PowerSync or a custom SQLite sync. Unsupported software breaks patch-management controls required by the listed compliance regimes.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "END_OF_LIFE_DEPENDENCY",
+      "severity": "critical",
+      "message": "'MySQL 5.7' matches MySQL 5.7, end of life since 2023-10-31. It is not recommended; migrate to MySQL 8.4 LTS. Unsupported software breaks patch-management controls required by the listed compliance regimes.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "END_OF_LIFE_DEPENDENCY",
+      "severity": "critical",
+      "message": "'Node.js 16 API' matches Node.js 14/16/18, end of life since 2025-04-30. It is not recommended; migrate to Node.js 24 LTS. Unsupported software breaks patch-management controls required by the listed compliance regimes.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "END_OF_LIFE_DEPENDENCY",
+      "severity": "critical",
+      "message": "'Visual Studio App Center' matches Visual Studio App Center, end of life since 2025-03-31. It is not recommended; migrate to EAS / Codemagic / GitHub Actions + fastlane. Unsupported software breaks patch-management controls required by the listed compliance regimes.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "END_OF_LIFE_DEPENDENCY",
+      "severity": "critical",
+      "message": "'Xamarin mobile app' matches Xamarin, end of life since 2024-05-01. It is not recommended; migrate to .NET MAUI. Unsupported software breaks patch-management controls required by the listed compliance regimes.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "DEPRECATED_SERVICE",
+      "severity": "warning",
+      "message": "'Heroku (current hosting)' (Heroku): Sustaining-engineering model: no new features, Enterprise sales stopped for new customers. Not used in the recommendation; alternative: Render / DigitalOcean / Cloud Run / ECS.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "CERTIFICATION_IS_PROCESS",
+      "severity": "info",
+      "message": "ISO 27001/SOC 2 certify your controls, not the stack: providers with attestations were chosen so you inherit their controls, but you still need policies, access reviews and audits.",
+      "fields": [
+        "compliance"
+      ]
+    },
+    {
+      "code": "EXISTING_SYSTEM_REUSED",
+      "severity": "info",
+      "message": "'MongoDB Realm Device Sync': reused/migrated into PostgreSQL.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "EXISTING_SYSTEM_REUSED",
+      "severity": "info",
+      "message": "'MySQL 5.7': reused/migrated into PostgreSQL.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    }
+  ],
+  "assumptions": [
+    "No data_residency or user geography given; primary region defaults to US East (move it next to your users)"
+  ],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "tiny",
+    "users_design_target": 5000,
+    "peak_concurrent_users": 100,
+    "peak_rps_estimate": 15,
+    "data_gb": 10.0,
+    "db_gb": 10.0,
+    "media_gb": 0.0,
+    "egress_gb_month": 73.2,
+    "primary_region": "us",
+    "effective_residency": "none",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": true,
+    "feature_points": 7.5,
+    "team_capacity": 50.0,
+    "effort_ratio": 0.15,
+    "background_jobs": false,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": []
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "Vue + Vite (SPA)",
+        "score": 7.045,
+        "status": "selected",
+        "top_factors": [
+          "+2.00 team already works in javascript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.80 rich client-side interactivity for a saas_b2b",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "React + Vite (SPA)",
+        "score": 6.745,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in javascript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.80 rich client-side interactivity for a saas_b2b",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "Blazor (ASP.NET Core)",
+        "score": 6.525,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in csharp (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.80 rich client-side interactivity for a saas_b2b",
+          "+0.66 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "SvelteKit",
+        "score": 6.495,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in javascript (team.languages)",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.80 rich client-side interactivity for a saas_b2b",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive saas_b2b",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive saas_b2b",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "ASP.NET Core (.NET 10 LTS)",
+        "score": 8.6,
+        "status": "selected",
+        "top_factors": [
+          "+2.00 team already works in csharp (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "NestJS (Node.js LTS, TypeScript)",
+        "score": 6.85,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in javascript (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.80 modules/DI give structure for a saas_b2b domain",
+          "+0.60 same language as the web/mobile clients: shared types and validation code"
+        ]
+      },
+      {
+        "choice": "Serverless functions",
+        "score": 6.5,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in javascript (team.languages)",
+          "-1.50 a saas_b2b domain needs a structured service, not scattered functions",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Fastify (Node.js LTS, TypeScript)",
+        "score": 5.5,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in javascript (team.languages)",
+          "+0.60 same language as the web/mobile clients: shared types and validation code",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": 5.05,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 complex saas_b2b workflows outgrow BaaS rules and edge functions",
+          "+2.00 team already works in javascript (team.languages)",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": 4.5,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 complex saas_b2b workflows outgrow BaaS rules and edge functions",
+          "+2.00 team already works in javascript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Next.js full-stack (Route Handlers + Server Actions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "only applies when the web frontend is Next.js",
+        "fields": [
+          "project.platforms"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "PostgreSQL",
+        "score": 6.7,
+        "status": "selected",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a saas_b2b domain",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": 6.6,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 continues the team's existing 'MySQL 5.7' technology on a supported version",
+          "+1.50 relational integrity and transactions for a saas_b2b domain",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": 5.5,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a saas_b2b domain",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "MongoDB",
+        "score": 3.95,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 continues the team's existing 'MongoDB Realm Device Sync' technology on a supported version",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "-1.00 money/relational data needs multi-row ACID guarantees"
+        ]
+      },
+      {
+        "choice": "SQL Server (Azure SQL)",
+        "score": 3.75,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a saas_b2b domain",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "-0.80 SQL Server licensing outside Azure SQL's managed tiers",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "SQLite (embedded) + Litestream",
+        "score": 3.1,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 single embedded file cannot serve multiple instances or HA",
+          "+1.50 relational integrity and transactions for a saas_b2b domain",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong performance (5/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Cloud SQL for PostgreSQL",
+        "score": 3.35,
+        "status": "selected",
+        "top_factors": [
+          "+3.00 same platform and private network as the application hosting",
+          "-0.45 ~$14+/month at the tiny tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Render Postgres",
+        "score": 0.46,
+        "status": "candidate",
+        "top_factors": [
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available",
+          "-0.34 ~$10+/month at the tiny tier"
+        ]
+      },
+      {
+        "choice": "Neon serverless Postgres",
+        "score": 0.4,
+        "status": "candidate",
+        "top_factors": [
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "Supabase Postgres",
+        "score": 0.4,
+        "status": "candidate",
+        "top_factors": [
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "Railway Postgres",
+        "score": 0.195,
+        "status": "candidate",
+        "top_factors": [
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "-0.20 ~$5+/month at the tiny tier"
+        ]
+      },
+      {
+        "choice": "DigitalOcean Managed PostgreSQL",
+        "score": 0.182,
+        "status": "candidate",
+        "top_factors": [
+          "-0.62 ~$24+/month at the tiny tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Self-managed PostgreSQL (Patroni/pgBackRest)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "Google Cloud Run",
+        "score": 5.93,
+        "status": "selected",
+        "top_factors": [
+          "+1.00 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.50 runs the ASP.NET Core (.NET 10 LTS) container as-is"
+        ]
+      },
+      {
+        "choice": "Azure App Service",
+        "score": 5.43,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 .NET-native hosting with deployment slots and built-in Entra auth",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.50 runs the ASP.NET Core (.NET 10 LTS) container as-is",
+          "+0.50 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "DigitalOcean App Platform",
+        "score": 5.23,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.60 gentle learning curve suits a intermediate team on a 10-week timeline",
+          "+0.50 runs the ASP.NET Core (.NET 10 LTS) container as-is",
+          "+0.50 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Render",
+        "score": 5.23,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.60 gentle learning curve suits a intermediate team on a 10-week timeline",
+          "+0.50 runs the ASP.NET Core (.NET 10 LTS) container as-is",
+          "+0.50 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Azure Container Apps",
+        "score": 5.15,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.50 runs the ASP.NET Core (.NET 10 LTS) container as-is"
+        ]
+      },
+      {
+        "choice": "Railway",
+        "score": 4.23,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.60 gentle learning curve suits a intermediate team on a 10-week timeline",
+          "+0.50 runs the ASP.NET Core (.NET 10 LTS) container as-is",
+          "+0.50 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "AWS Amplify Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived ASP.NET Core (.NET 10 LTS) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Azure Static Web Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived ASP.NET Core (.NET 10 LTS) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived ASP.NET Core (.NET 10 LTS) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Firebase Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived ASP.NET Core (.NET 10 LTS) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Amazon GameLift Servers",
+        "score": null,
+        "status": "excluded",
+        "reason": "dedicated game-server fleets: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "GitHub Pages",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks SOC 2 (compliance includes soc2)",
+        "fields": [
+          "compliance"
+        ]
+      }
+    ]
+  }
+}

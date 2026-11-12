@@ -1,0 +1,1130 @@
+{
+  "scenario_id": "E14",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "c072026dc357899d",
+  "status": "ok_with_warnings",
+  "summary": "Modular monolith: Django + Cloud SQL for PostgreSQL serving Vue + Vite (SPA), hosted on Google Cloud Run (europe-west3 Frankfurt). Estimated $135-650/month (within the $1,200 budget).",
+  "architecture_style": "modular_monolith",
+  "architecture_rationale": {
+    "text": "One deployable with strict internal modules for the saas_b2b domain: a 6-engineer team gets clear boundaries without distributed-system overhead; modules can be extracted later if scale demands it. The ML model is deployed as a separate service so it can be retrained and scaled independently. Over-engineering guard: microservices rejected: 6 engineer(s) cannot absorb the operational overhead.",
+    "driven_by": [
+      "team.size",
+      "project.type",
+      "team.has_devops"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "Vue + Vite (SPA)",
+      "justification": "Web - Vue + Vite (SPA): Chosen because team already works in typescript (team.languages); strong cost efficiency (5/5) with priorities.cost=3; rich client-side interactivity for a saas_b2b; strong maintainability (4/5) with priorities.maintainability=3.",
+      "driven_by": [
+        "team.languages",
+        "priorities.cost",
+        "priorities.maintainability",
+        "project.type",
+        "priorities.performance",
+        "priorities.time_to_market"
+      ],
+      "alternatives": [
+        {
+          "choice": "React + Vite (SPA)",
+          "why_not": "A close runner-up with a slightly weaker overall fit (fit 5.7 vs 5.8)."
+        },
+        {
+          "choice": "SvelteKit",
+          "why_not": "Vue + Vite scores higher on cost (fit 5.7 vs 5.8)."
+        }
+      ],
+      "tradeoffs": [],
+      "fit_score": 5.845,
+      "confidence": "low",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "Vue + Vite (SPA)",
+          "version": "Vue 3",
+          "kb_id": "vue_vite"
+        }
+      ],
+      "sources": [
+        "https://vuejs.org/guide/",
+        "https://vite.dev/guide/"
+      ]
+    },
+    "backend": {
+      "choice": "Django (Python)",
+      "justification": "Chosen because team already works in python (team.languages); strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3; strong time-to-market (5/5) with priorities.time_to_market=3.",
+      "driven_by": [
+        "priorities.maintainability",
+        "team.languages",
+        "priorities.security",
+        "priorities.time_to_market",
+        "project.type",
+        "requirements.ml_features"
+      ],
+      "alternatives": [
+        {
+          "choice": "NestJS (Node.js LTS, TypeScript)",
+          "why_not": "Django scores higher on ML fit and security (fit 6.2 vs 7.7)."
+        },
+        {
+          "choice": "FastAPI (Python)",
+          "why_not": "Minimal framework leaves domain structure to the team. Django scores higher on maintainability and security (fit 5.5 vs 7.7)."
+        },
+        {
+          "choice": "Firebase (Firestore + Auth + Functions)",
+          "why_not": "Excluded by hard constraint: its Authentication product has no data-location choice (infrastructure.data_residency)."
+        }
+      ],
+      "tradeoffs": [
+        "Heavier conventions for tiny services"
+      ],
+      "fit_score": 7.7,
+      "confidence": "medium",
+      "kb_id": "django",
+      "version": "Django 5.2 LTS",
+      "sources": [
+        "https://docs.djangoproject.com/",
+        "https://survey.stackoverflow.co/2025/"
+      ]
+    },
+    "database": {
+      "choice": "Cloud SQL for PostgreSQL (europe-west3 Frankfurt, HA standby)",
+      "justification": "Chosen because relational integrity and transactions for a saas_b2b domain; strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3; strong cost efficiency (4/5) with priorities.cost=3. Managed as Cloud SQL for PostgreSQL: same platform and private network as the application hosting; managed failover/standby available.",
+      "driven_by": [
+        "project.type",
+        "priorities.maintainability",
+        "priorities.security",
+        "priorities.cost",
+        "priorities.performance",
+        "priorities.scalability",
+        "requirements.availability"
+      ],
+      "alternatives": [
+        {
+          "choice": "TimescaleDB (PostgreSQL extension)",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on maintainability and security (fit 5.9 vs 7.6)."
+        },
+        {
+          "choice": "MySQL",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on maintainability and security (fit 5.1 vs 7.6)."
+        },
+        {
+          "choice": "Neon serverless Postgres",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on integration with the hosting platform and availability (fit -0.5 vs 2.5)."
+        },
+        {
+          "choice": "DigitalOcean Managed PostgreSQL",
+          "why_not": "Excluded by hard constraint: lacks ISO 27001 (compliance includes iso27001)."
+        }
+      ],
+      "tradeoffs": [
+        "Single-writer primary: write scale beyond one large node needs partitioning/sharding",
+        "Vacuum and connection pooling need attention at scale",
+        "~$48+/month at the small tier"
+      ],
+      "fit_score": 7.6,
+      "confidence": "medium",
+      "kb_id": "postgresql",
+      "version": "PostgreSQL 17/18",
+      "sources": [
+        "https://www.postgresql.org/docs/",
+        "https://www.postgresql.org/docs/current/textsearch.html",
+        "https://postgis.net/documentation/"
+      ],
+      "engine": "PostgreSQL",
+      "offering": "Cloud SQL for PostgreSQL",
+      "offering_kb_id": "cloudsql_pg"
+    },
+    "hosting": {
+      "choice": "Google Cloud Run (europe-west3 Frankfurt)",
+      "justification": "Chosen because strong cost efficiency (5/5) with priorities.cost=3; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; runs the Django (Python) container as-is.",
+      "driven_by": [
+        "priorities.cost",
+        "priorities.scalability",
+        "priorities.security",
+        "priorities.maintainability",
+        "priorities.performance",
+        "priorities.time_to_market"
+      ],
+      "alternatives": [
+        {
+          "choice": "Azure Container Apps",
+          "why_not": "A close runner-up with a slightly weaker overall fit (fit 5.2 vs 5.2)."
+        },
+        {
+          "choice": "Azure App Service",
+          "why_not": "Google Cloud Run scores higher on cost and scalability (fit 3.8 vs 5.2)."
+        },
+        {
+          "choice": "Cloudflare (Workers static assets / Pages)",
+          "why_not": "Excluded by hard constraint: cannot pin data location (infrastructure.data_residency=eu)."
+        }
+      ],
+      "tradeoffs": [
+        "Session affinity is best-effort for stateful rooms"
+      ],
+      "fit_score": 5.25,
+      "confidence": "low",
+      "kb_id": "cloud_run",
+      "sources": [
+        "https://cloud.google.com/run/docs",
+        "https://cloud.google.com/run/pricing",
+        "https://cloud.google.com/run/docs/triggering/websockets"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "queue",
+        "choice": "Google Cloud Tasks / Pub/Sub (europe-west3 Frankfurt)",
+        "justification": "Chosen because same cloud/platform and region as the application; dead-letter queues for payment webhooks and reconciliation; strong cost efficiency (5/5) with priorities.cost=3; strong performance (5/5) with priorities.performance=3.",
+        "driven_by": [
+          "requirements.payments",
+          "requirements.file_media_storage",
+          "requirements.ml_features",
+          "priorities.cost",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Postgres-backed job queue",
+            "why_not": "Google Cloud Tasks / Pub/Sub scores higher on integration with the hosting platform and payments fit (fit 5.7 vs 6.8)."
+          },
+          {
+            "choice": "Amazon SQS (+ EventBridge Scheduler)",
+            "why_not": "Different cloud from the application hosting. Google Cloud Tasks / Pub/Sub scores higher on payments fit (fit 1.5 vs 6.8)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.8,
+        "confidence": "medium",
+        "kb_id": "cloud_tasks",
+        "sources": [
+          "https://cloud.google.com/tasks/docs",
+          "https://cloud.google.com/pubsub/docs"
+        ]
+      },
+      {
+        "layer": "search",
+        "choice": "PostgreSQL full-text search (tsvector + pg_trgm)",
+        "justification": "Chosen because Postgres FTS is enough for 3 GB at small scale; strong cost efficiency (5/5) with priorities.cost=3; strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3.",
+        "driven_by": [
+          "requirements.full_text_search",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Elastic Cloud (Elasticsearch)",
+            "why_not": "PostgreSQL full-text search scores higher on search fit and cost (fit 2.8 vs 5.2)."
+          },
+          {
+            "choice": "Meilisearch (self-hosted)",
+            "why_not": "PostgreSQL full-text search scores higher on search fit and maintainability (fit 2.8 vs 5.2)."
+          }
+        ],
+        "tradeoffs": [
+          "Relevance tuning and faceting are basic compared with dedicated engines"
+        ],
+        "fit_score": 5.15,
+        "confidence": "high",
+        "kb_id": "pg_fts",
+        "sources": [
+          "https://www.postgresql.org/docs/current/textsearch.html"
+        ]
+      },
+      {
+        "layer": "auth",
+        "choice": "Auth0 (Okta)",
+        "justification": "Chosen because strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong time-to-market (5/5) with priorities.time_to_market=3; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Keycloak (self-hosted)",
+            "why_not": "Self-hosting another service when a managed option exists. Auth0 scores higher on time-to-market and scalability (fit 1.8 vs 2.3)."
+          },
+          {
+            "choice": "Microsoft Entra ID",
+            "why_not": "Different cloud from the application hosting; workforce directory, not a customer SSO broker (fit 0.8 vs 2.3)."
+          },
+          {
+            "choice": "Firebase Authentication",
+            "why_not": "Excluded by hard constraint: cannot pin data location (infrastructure.data_residency=eu)."
+          }
+        ],
+        "tradeoffs": [
+          "Gets expensive quickly as MAU grows"
+        ],
+        "fit_score": 2.3,
+        "confidence": "low",
+        "kb_id": "auth0",
+        "sources": [
+          "https://auth0.com/pricing"
+        ]
+      },
+      {
+        "layer": "storage",
+        "choice": "Google Cloud Storage (europe-west3 Frankfurt)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong maintainability (5/5) with priorities.maintainability=3; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "Cloudflare R2",
+            "why_not": "Google Cloud Storage scores higher on integration with the hosting platform and maintainability (fit 3.1 vs 6.0)."
+          },
+          {
+            "choice": "Azure Blob Storage",
+            "why_not": "Different cloud from the application hosting (fit 1.5 vs 6.0)."
+          },
+          {
+            "choice": "DigitalOcean Spaces",
+            "why_not": "Excluded by hard constraint: lacks ISO 27001 (compliance includes iso27001)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.0,
+        "confidence": "high",
+        "kb_id": "gcs",
+        "sources": [
+          "https://cloud.google.com/storage/pricing"
+        ]
+      },
+      {
+        "layer": "cdn",
+        "choice": "Google Cloud CDN",
+        "justification": "Chosen because same cloud/platform and region as the application; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "Cloudflare CDN (free/pro plan)",
+            "why_not": "Google Cloud CDN scores higher on integration with the hosting platform (fit 4.7 vs 5.7)."
+          },
+          {
+            "choice": "Amazon CloudFront",
+            "why_not": "Different cloud from the application hosting (fit 1.5 vs 5.7)."
+          }
+        ],
+        "tradeoffs": [
+          "Cache only public, non-personal assets at the edge"
+        ],
+        "fit_score": 5.65,
+        "confidence": "medium",
+        "kb_id": "cloud_cdn",
+        "sources": [
+          "https://cloud.google.com/cdn/docs"
+        ]
+      },
+      {
+        "layer": "payments",
+        "choice": "Stripe (Payments + Billing)",
+        "justification": "Chosen because per-seat subscription billing with proration; global card/wallet coverage; strong maintainability (5/5) with priorities.maintainability=3; strong scalability (5/5) with priorities.scalability=3.",
+        "driven_by": [
+          "requirements.payments",
+          "project.description",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "Razorpay",
+            "why_not": "Excluded by hard constraint: no EU region (infrastructure.data_residency=eu)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.3,
+        "confidence": "high",
+        "kb_id": "stripe",
+        "sources": [
+          "https://docs.stripe.com/",
+          "https://docs.stripe.com/billing",
+          "https://stripe.com/in"
+        ]
+      },
+      {
+        "layer": "ml",
+        "choice": "Vertex AI (Gemini) (europe-west3 Frankfurt)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong time-to-market (5/5) with priorities.time_to_market=3.",
+        "driven_by": [
+          "requirements.ml_features",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Vertex AI endpoints",
+            "why_not": "Vertex AI scores higher on time-to-market and cost (fit 4.6 vs 5.7)."
+          },
+          {
+            "choice": "Hosted LLM API (Anthropic / OpenAI)",
+            "why_not": "Vertex AI scores higher on integration with the hosting platform and cost (fit 2.8 vs 5.7)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.65,
+        "confidence": "medium",
+        "kb_id": "vertex_llm",
+        "sources": [
+          "https://cloud.google.com/vertex-ai/docs"
+        ]
+      },
+      {
+        "layer": "ml",
+        "purpose": "vector search for RAG",
+        "choice": "pgvector (vector search in PostgreSQL)",
+        "justification": "Chosen because embeddings in the existing PostgreSQL; strong cost efficiency (5/5) with priorities.cost=3; strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3.",
+        "driven_by": [
+          "requirements.ml_features",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Qdrant",
+            "why_not": "pgvector scores higher on integration with the database and cost (fit 2.8 vs 5.2)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.15,
+        "confidence": "high",
+        "kb_id": "pgvector",
+        "sources": [
+          "https://github.com/pgvector/pgvector"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "GitHub Actions",
+        "justification": "Chosen because free minutes, large action marketplace, works with any cloud; strong cost efficiency (5/5) with priorities.cost=3; strong maintainability (5/5) with priorities.maintainability=3; strong scalability (5/5) with priorities.scalability=3.",
+        "driven_by": [
+          "team.has_devops",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.performance",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "GitLab CI (self-managed)",
+            "why_not": "Self-hosting CI is unnecessary. GitHub Actions scores higher on time-to-market and cost (fit 1.0 vs 4.3)."
+          },
+          {
+            "choice": "Azure Pipelines",
+            "why_not": "Different cloud from the application hosting. GitHub Actions scores higher on time-to-market and cost (fit 0.8 vs 4.3)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 4.3,
+        "confidence": "high",
+        "kb_id": "github_actions",
+        "sources": [
+          "https://docs.github.com/actions"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Google Cloud Logging + Monitoring (europe-west3 Frankfurt)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong time-to-market (5/5) with priorities.time_to_market=3.",
+        "driven_by": [
+          "requirements.availability",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Google Cloud Logging + Monitoring scores higher on integration with the hosting platform and scalability (fit 3.2 vs 5.7)."
+          },
+          {
+            "choice": "Prometheus + Grafana + Loki (self-hosted)",
+            "why_not": "Self-hosting another service when a managed option exists. Google Cloud Logging + Monitoring scores higher on integration with the hosting platform and time-to-market (fit 1.6 vs 5.7)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.65,
+        "confidence": "high",
+        "kb_id": "gcp_ops",
+        "sources": [
+          "https://cloud.google.com/stackdriver/docs"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "security and compliance controls",
+        "choice": "Cloud Armor + Secret Manager + Cloud KMS (europe-west3 Frankfurt)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "compliance",
+          "priorities.security",
+          "priorities.scalability",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "HashiCorp Vault/OpenBao + ModSecurity WAF (self-hosted)",
+            "why_not": "Self-hosting another service when a managed option exists. Cloud Armor + Secret Manager + Cloud KMS scores higher on integration with the hosting platform and scalability (fit 1.3 vs 5.0)."
+          },
+          {
+            "choice": "Azure Key Vault + Defender for Cloud + Front Door WAF",
+            "why_not": "Different cloud from the application hosting (fit 0.5 vs 5.0)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 4.95,
+        "confidence": "high",
+        "kb_id": "gcp_sec",
+        "sources": [
+          "https://cloud.google.com/security/compliance/offerings"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 135,
+    "max": 650,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 20,000 users at 12 months, 800 peak concurrent users, ~120 req/s peak (scale tier: small)",
+      "Data: ~3 GB in the database, ~7 GB of media, ~586 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work",
+      "Stripe (Payments + Billing) charges per transaction (typically ~2% domestic); not counted as infrastructure"
+    ],
+    "breakdown": [
+      {
+        "component": "Google Cloud Run (europe-west3 Frankfurt)",
+        "min": 5.0,
+        "max": 40.0,
+        "basis": "small tier (~120 req/s peak, 800 concurrent users)"
+      },
+      {
+        "component": "Cloud SQL for PostgreSQL",
+        "min": 48.0,
+        "max": 144.0,
+        "basis": "small tier instance; x1.6 for standby/replicas (availability 99.9%)"
+      },
+      {
+        "component": "Google Cloud Tasks / Pub/Sub (europe-west3 Frankfurt)",
+        "min": 0.0,
+        "max": 5.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Auth0 (Okta)",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "20,000 MAU (within free tier)"
+      },
+      {
+        "component": "Google Cloud Storage (europe-west3 Frankfurt)",
+        "min": 8.58,
+        "max": 12.82,
+        "basis": "7 GB stored, ~105 GB/month served"
+      },
+      {
+        "component": "Google Cloud CDN",
+        "min": 5.0,
+        "max": 20.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Vertex AI (Gemini) (europe-west3 Frankfurt)",
+        "min": 50.0,
+        "max": 300.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "GitHub Actions",
+        "min": 0.0,
+        "max": 10.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Google Cloud Logging + Monitoring (europe-west3 Frankfurt)",
+        "min": 0.0,
+        "max": 30.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Cloud Armor + Secret Manager + Cloud KMS (europe-west3 Frankfurt)",
+        "min": 20.0,
+        "max": 80.0,
+        "basis": "small tier"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "ML_RESIDENCY",
+      "severity": "warning",
+      "message": "Use region-pinned model endpoints and avoid cross-region inference profiles so prompts with personal data stay in-region.",
+      "fields": [
+        "requirements.ml_features",
+        "infrastructure.data_residency"
+      ]
+    },
+    {
+      "code": "CERTIFICATION_IS_PROCESS",
+      "severity": "info",
+      "message": "ISO 27001/SOC 2 certify your controls, not the stack: providers with attestations were chosen so you inherit their controls, but you still need policies, access reviews and audits.",
+      "fields": [
+        "compliance"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "small",
+    "users_design_target": 20000,
+    "peak_concurrent_users": 800,
+    "peak_rps_estimate": 120,
+    "data_gb": 10.0,
+    "db_gb": 3.0,
+    "media_gb": 7.0,
+    "egress_gb_month": 585.9,
+    "primary_region": "eu",
+    "effective_residency": "eu",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": true,
+    "feature_points": 16.5,
+    "team_capacity": 84.0,
+    "effort_ratio": 0.2,
+    "background_jobs": true,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": []
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "Vue + Vite (SPA)",
+        "score": 5.845,
+        "status": "selected",
+        "top_factors": [
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.80 rich client-side interactivity for a saas_b2b",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "React + Vite (SPA)",
+        "score": 5.745,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.80 rich client-side interactivity for a saas_b2b",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "SvelteKit",
+        "score": 5.695,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.80 rich client-side interactivity for a saas_b2b",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Angular",
+        "score": 5.59,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.80 rich client-side interactivity for a saas_b2b",
+          "+0.66 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive saas_b2b",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive saas_b2b",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "Django (Python)",
+        "score": 7.7,
+        "status": "selected",
+        "top_factors": [
+          "+1.40 team already works in python (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "NestJS (Node.js LTS, TypeScript)",
+        "score": 6.25,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.80 modules/DI give structure for a saas_b2b domain",
+          "+0.60 same language as the web/mobile clients: shared types and validation code"
+        ]
+      },
+      {
+        "choice": "FastAPI (Python)",
+        "score": 5.45,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 team already works in python (team.languages)",
+          "+0.80 Python ML ecosystem for ml_features=llm_rag",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "ASP.NET Core (.NET 10 LTS)",
+        "score": 5.34,
+        "status": "candidate",
+        "top_factors": [
+          "-1.26 no csharp/fsharp in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Fastify (Node.js LTS, TypeScript)",
+        "score": 4.7,
+        "status": "candidate",
+        "top_factors": [
+          "+1.40 team already works in typescript (team.languages)",
+          "+0.60 same language as the web/mobile clients: shared types and validation code",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Serverless functions",
+        "score": 4.5,
+        "status": "candidate",
+        "top_factors": [
+          "-1.50 a saas_b2b domain needs a structured service, not scattered functions",
+          "+1.40 team already works in typescript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "its Authentication product has no data-location choice (infrastructure.data_residency)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Next.js full-stack (Route Handlers + Server Actions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "only applies when the web frontend is Next.js",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks ISO 27001 (compliance includes iso27001)",
+        "fields": [
+          "compliance"
+        ]
+      },
+      {
+        "choice": "Appwrite",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks ISO 27001 (compliance includes iso27001)",
+        "fields": [
+          "compliance"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "PostgreSQL",
+        "score": 7.6,
+        "status": "selected",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a saas_b2b domain",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": 5.9,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a saas_b2b domain",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": 5.1,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a saas_b2b domain",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "SQL Server (Azure SQL)",
+        "score": 3.75,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a saas_b2b domain",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "-0.80 SQL Server licensing outside Azure SQL's managed tiers",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "MongoDB",
+        "score": 3.35,
+        "status": "candidate",
+        "top_factors": [
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "-1.00 money/relational data needs multi-row ACID guarantees",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Amazon DynamoDB",
+        "score": 2.55,
+        "status": "candidate",
+        "top_factors": [
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "-1.00 money/relational data needs multi-row ACID guarantees"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Cloud SQL for PostgreSQL",
+        "score": 2.512,
+        "status": "selected",
+        "top_factors": [
+          "+3.00 same platform and private network as the application hosting",
+          "-0.89 ~$48+/month at the small tier",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Neon serverless Postgres",
+        "score": -0.538,
+        "status": "candidate",
+        "top_factors": [
+          "-0.54 ~$19+/month at the small tier"
+        ]
+      },
+      {
+        "choice": "Azure Database for PostgreSQL (Flexible Server)",
+        "score": -2.488,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 different cloud from the application: cross-cloud latency and egress",
+          "-0.89 ~$48+/month at the small tier",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Amazon RDS for PostgreSQL",
+        "score": -2.488,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 different cloud from the application: cross-cloud latency and egress",
+          "-0.89 ~$48+/month at the small tier",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Amazon Aurora PostgreSQL",
+        "score": -3.118,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 different cloud from the application: cross-cloud latency and egress",
+          "-1.52 ~$192+/month at the small tier",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "DigitalOcean Managed PostgreSQL",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks ISO 27001 (compliance includes iso27001)",
+        "fields": [
+          "compliance"
+        ]
+      },
+      {
+        "choice": "Railway Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks ISO 27001 (compliance includes iso27001)",
+        "fields": [
+          "compliance"
+        ]
+      },
+      {
+        "choice": "Render Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks ISO 27001 (compliance includes iso27001)",
+        "fields": [
+          "compliance"
+        ]
+      },
+      {
+        "choice": "Self-managed PostgreSQL (Patroni/pgBackRest)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Supabase Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks ISO 27001 (compliance includes iso27001)",
+        "fields": [
+          "compliance"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "Google Cloud Run",
+        "score": 5.25,
+        "status": "selected",
+        "top_factors": [
+          "+1.00 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.50 runs the Django (Python) container as-is"
+        ]
+      },
+      {
+        "choice": "Azure Container Apps",
+        "score": 5.15,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.50 runs the Django (Python) container as-is"
+        ]
+      },
+      {
+        "choice": "Azure App Service",
+        "score": 3.75,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.50 runs the Django (Python) container as-is",
+          "+0.50 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.50 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "AWS ECS on Fargate",
+        "score": 3.65,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.50 runs the Django (Python) container as-is",
+          "+0.50 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "AWS Elastic Beanstalk",
+        "score": 2.25,
+        "status": "candidate",
+        "top_factors": [
+          "+0.50 runs the Django (Python) container as-is",
+          "+0.50 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.50 strong performance (4/5) with priorities.performance=3",
+          "+0.50 strong scalability (4/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Managed Kubernetes (EKS / GKE / AKS)",
+        "score": -1.209,
+        "status": "candidate",
+        "top_factors": [
+          "-3.20 over-engineering for 20,000 users (pays off beyond ~1,000,000)",
+          "+1.00 strong performance (5/5) with priorities.performance=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "AWS Amplify Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Azure Static Web Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot pin data location (infrastructure.data_residency=eu)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "DigitalOcean App Platform",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks ISO 27001 (compliance includes iso27001)",
+        "fields": [
+          "compliance"
+        ]
+      },
+      {
+        "choice": "Firebase Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Fly.io",
+        "score": null,
+        "status": "excluded",
+        "reason": "lacks ISO 27001 (compliance includes iso27001)",
+        "fields": [
+          "compliance"
+        ]
+      }
+    ]
+  }
+}

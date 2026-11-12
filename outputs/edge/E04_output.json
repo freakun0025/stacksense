@@ -1,0 +1,880 @@
+{
+  "scenario_id": "E04",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "947aa1f3bd02e635",
+  "status": "ok_with_warnings",
+  "summary": "Monolith: Django + Cloud SQL for PostgreSQL serving Server-rendered templates + HTMX, hosted on Google Cloud Run (us-central1 Iowa). Estimated $25-110/month (around the $100 budget).",
+  "architecture_style": "monolith",
+  "architecture_rationale": {
+    "text": "A single deployable is the fastest and cheapest option for a 1-person team building a web_app with 5,000 users. Over-engineering guard: microservices rejected: 1 engineer(s), no DevOps cannot absorb the operational overhead.",
+    "driven_by": [
+      "team.size",
+      "project.type",
+      "scale.users_12_months"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "Server-rendered templates + HTMX",
+      "justification": "Web - Server-rendered templates + HTMX: Chosen because team already works in python (team.languages); strong cost efficiency (5/5) with priorities.cost=3; form-heavy CRUD screens render well on the server; gentle learning curve suits a beginner team on a 10-week timeline.",
+      "driven_by": [
+        "team.languages",
+        "priorities.cost",
+        "project.type",
+        "team.experience",
+        "priorities.maintainability",
+        "priorities.performance"
+      ],
+      "alternatives": [
+        {
+          "choice": "Vue + Vite (SPA)",
+          "why_not": "No javascript/typescript in team.languages: ramp-up time and hiring risk (fit 3.0 vs 7.4)."
+        },
+        {
+          "choice": "SvelteKit",
+          "why_not": "No javascript/typescript in team.languages: ramp-up time and hiring risk. Server-rendered templates + HTMX scores higher on cost and operational simplicity (fit 2.5 vs 7.4)."
+        }
+      ],
+      "tradeoffs": [
+        "Rich offline/canvas-style interactivity still needs JavaScript islands",
+        "UI and backend deploy together (fine for one team)"
+      ],
+      "fit_score": 7.445,
+      "confidence": "high",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "Server-rendered templates + HTMX",
+          "version": "HTMX 2 + framework templates",
+          "kb_id": "htmx"
+        }
+      ],
+      "sources": [
+        "https://htmx.org/docs/",
+        "https://docs.djangoproject.com/"
+      ]
+    },
+    "backend": {
+      "choice": "Django (Python)",
+      "justification": "Chosen because team already works in python (team.languages); strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3; strong time-to-market (5/5) with priorities.time_to_market=3.",
+      "driven_by": [
+        "team.languages",
+        "priorities.maintainability",
+        "priorities.security",
+        "priorities.time_to_market",
+        "project.platforms",
+        "priorities.cost"
+      ],
+      "alternatives": [
+        {
+          "choice": "FastAPI (Python)",
+          "why_not": "Django scores higher on maintainability and security (fit 8.2 vs 8.9)."
+        },
+        {
+          "choice": "ASP.NET Core (.NET 10 LTS)",
+          "why_not": "No csharp/fsharp in team.languages: ramp-up time and hiring risk. Django scores higher on platform coverage and time-to-market (fit 4.5 vs 8.9)."
+        }
+      ],
+      "tradeoffs": [
+        "Heavier conventions for tiny services"
+      ],
+      "fit_score": 8.9,
+      "confidence": "low",
+      "kb_id": "django",
+      "version": "Django 5.2 LTS",
+      "sources": [
+        "https://docs.djangoproject.com/",
+        "https://survey.stackoverflow.co/2025/"
+      ]
+    },
+    "database": {
+      "choice": "Cloud SQL for PostgreSQL (us-central1 Iowa, HA standby)",
+      "justification": "Chosen because strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3; strong cost efficiency (4/5) with priorities.cost=3; strong performance (4/5) with priorities.performance=3. Managed as Cloud SQL for PostgreSQL: same platform and private network as the application hosting; fully managed: no operations work for a team without DevOps.",
+      "driven_by": [
+        "priorities.maintainability",
+        "priorities.security",
+        "priorities.cost",
+        "priorities.performance",
+        "priorities.scalability",
+        "priorities.time_to_market",
+        "requirements.availability",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "TimescaleDB (PostgreSQL extension)",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on maintainability and security (fit 4.0 vs 4.7)."
+        },
+        {
+          "choice": "MySQL",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on maintainability and security (fit 3.6 vs 4.7)."
+        },
+        {
+          "choice": "Render Postgres",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on integration with the hosting platform (fit 0.3 vs 3.1)."
+        },
+        {
+          "choice": "Self-managed PostgreSQL (Patroni/pgBackRest)",
+          "why_not": "Excluded by hard constraint: deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services."
+        }
+      ],
+      "tradeoffs": [
+        "Single-writer primary: write scale beyond one large node needs partitioning/sharding",
+        "Vacuum and connection pooling need attention at scale",
+        "~$27+/month at the tiny tier"
+      ],
+      "fit_score": 4.7,
+      "confidence": "low",
+      "kb_id": "postgresql",
+      "version": "PostgreSQL 17/18",
+      "sources": [
+        "https://www.postgresql.org/docs/",
+        "https://www.postgresql.org/docs/current/textsearch.html",
+        "https://postgis.net/documentation/"
+      ],
+      "engine": "PostgreSQL",
+      "offering": "Cloud SQL for PostgreSQL",
+      "offering_kb_id": "cloudsql_pg"
+    },
+    "hosting": {
+      "choice": "Google Cloud Run (us-central1 Iowa)",
+      "justification": "Chosen because multi-zone redundancy for availability 99.99%; strong cost efficiency (5/5) with priorities.cost=3; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3.",
+      "driven_by": [
+        "priorities.cost",
+        "priorities.scalability",
+        "priorities.security",
+        "requirements.availability",
+        "priorities.maintainability",
+        "team.experience"
+      ],
+      "alternatives": [
+        {
+          "choice": "Azure Container Apps",
+          "why_not": "Google Cloud Run scores higher on learning curve and operational simplicity (fit 6.2 vs 7.2)."
+        },
+        {
+          "choice": "Azure App Service",
+          "why_not": "Google Cloud Run scores higher on cost and scalability (fit 5.7 vs 7.2)."
+        },
+        {
+          "choice": "On-premise Kubernetes (RKE2 / k3s)",
+          "why_not": "Excluded by hard constraint: deployment_model=managed_cloud is not on-premise."
+        }
+      ],
+      "tradeoffs": [
+        "Session affinity is best-effort for stateful rooms"
+      ],
+      "fit_score": 7.23,
+      "confidence": "medium",
+      "kb_id": "cloud_run",
+      "sources": [
+        "https://cloud.google.com/run/docs",
+        "https://cloud.google.com/run/pricing",
+        "https://cloud.google.com/run/docs/triggering/websockets"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "auth",
+        "choice": "Django auth + django-allauth",
+        "justification": "Chosen because auth inside the backend; no per-MAU fees; strong cost efficiency (5/5) with priorities.cost=3; strong maintainability (4/5) with priorities.maintainability=3; strong performance (4/5) with priorities.performance=3.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "WorkOS (AuthKit + SSO)",
+            "why_not": "Django auth + django-allauth scores higher on authentication fit and cost (fit 2.8 vs 3.6)."
+          },
+          {
+            "choice": "Auth0 (Okta)",
+            "why_not": "Weaker cost efficiency (2/5) with priorities.cost=3. Django auth + django-allauth scores higher on authentication fit (fit 2.6 vs 3.6)."
+          }
+        ],
+        "tradeoffs": [
+          "You own password storage, rate limiting and MFA flows"
+        ],
+        "fit_score": 3.57,
+        "confidence": "low",
+        "kb_id": "framework_auth",
+        "sources": [
+          "https://www.better-auth.com/docs",
+          "https://learn.microsoft.com/aspnet/core/",
+          "https://spring.io/projects/spring-boot"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "GitHub Actions",
+        "justification": "Chosen because free minutes, large action marketplace, works with any cloud; strong cost efficiency (5/5) with priorities.cost=3; strong maintainability (5/5) with priorities.maintainability=3; strong scalability (5/5) with priorities.scalability=3.",
+        "driven_by": [
+          "team.has_devops",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.performance",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Pipelines",
+            "why_not": "Different cloud from the application hosting. GitHub Actions scores higher on time-to-market and cost (fit 1.1 vs 4.6)."
+          },
+          {
+            "choice": "GitLab CI (self-managed)",
+            "why_not": "Self-hosting CI is unnecessary; needs ongoing operations work but team.has_devops=false (ops burden 3/5). GitHub Actions scores higher on time-to-market (fit 0.3 vs 4.6)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 4.62,
+        "confidence": "high",
+        "kb_id": "github_actions",
+        "sources": [
+          "https://docs.github.com/actions"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Google Cloud Logging + Monitoring (us-central1 Iowa)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong time-to-market (5/5) with priorities.time_to_market=3.",
+        "driven_by": [
+          "requirements.availability",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Google Cloud Logging + Monitoring scores higher on integration with the hosting platform and scalability (fit 3.6 vs 6.0)."
+          },
+          {
+            "choice": "Azure Monitor Application Insights",
+            "why_not": "Different cloud from the application hosting (fit 1.5 vs 6.0)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.97,
+        "confidence": "high",
+        "kb_id": "gcp_ops",
+        "sources": [
+          "https://cloud.google.com/stackdriver/docs"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "transactional notifications",
+        "choice": "Resend",
+        "justification": "Chosen because strong time-to-market (5/5) with priorities.time_to_market=3; strong cost efficiency (4/5) with priorities.cost=3; strong maintainability (4/5) with priorities.maintainability=3; strong performance (4/5) with priorities.performance=3.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon SES",
+            "why_not": "Different cloud from the application hosting. Resend scores higher on time-to-market (fit 1.5 vs 2.8)."
+          },
+          {
+            "choice": "On-prem SMTP relay",
+            "why_not": "In-network SMTP relay. Resend scores higher on maintainability and performance (fit -0.6 vs 2.8)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 2.77,
+        "confidence": "medium",
+        "kb_id": "resend",
+        "sources": [
+          "https://resend.com/docs"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 25,
+    "max": 110,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 5,000 users at 12 months, 100 peak concurrent users, ~15 req/s peak (scale tier: tiny)",
+      "Data: ~10 GB in the database, ~0 GB of media, ~73 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work"
+    ],
+    "breakdown": [
+      {
+        "component": "Google Cloud Run (us-central1 Iowa)",
+        "min": 0.0,
+        "max": 11.0,
+        "basis": "tiny tier (~15 req/s peak, 100 concurrent users); x2.2 for redundant instances (availability 99.99%)"
+      },
+      {
+        "component": "Cloud SQL for PostgreSQL",
+        "min": 27.0,
+        "max": 90.0,
+        "basis": "tiny tier instance; x3.0 for standby/replicas (availability 99.99%)"
+      },
+      {
+        "component": "Django auth + django-allauth",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "5,000 MAU (within free tier)"
+      },
+      {
+        "component": "Google Cloud Logging + Monitoring (us-central1 Iowa)",
+        "min": 0.0,
+        "max": 5.0,
+        "basis": "tiny tier"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "AVAILABILITY_TEAM_MISMATCH",
+      "severity": "critical",
+      "message": "availability=99.99 (~4.3 min downtime/month) needs multi-region failover and 24x7 on-call; a 1-person beginner team without DevOps cannot operate that.",
+      "fields": [
+        "requirements.availability",
+        "team.size",
+        "team.has_devops",
+        "team.experience"
+      ]
+    },
+    {
+      "code": "MULTI_REGION_REQUIRED",
+      "severity": "warning",
+      "message": "99.99% needs active-active or warm-standby in a second region; the stack is multi-zone in one region (~99.95%) plus cross-region replicas. Budget for the second region.",
+      "fields": [
+        "requirements.availability"
+      ]
+    },
+    {
+      "code": "BUDGET_HEADROOM",
+      "severity": "info",
+      "message": "Expected $25-110/month: the upper end exceeds the $100 budget at peak usage. Set billing alerts.",
+      "fields": [
+        "budget.monthly_infra_usd"
+      ]
+    }
+  ],
+  "assumptions": [
+    "No data_residency or user geography given; primary region defaults to US East (move it next to your users)",
+    "RELAXED requirements.availability: designed for ~99.95% on managed multi-zone services (provider SLAs) instead of self-operated 99.99% multi-region failover"
+  ],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "tiny",
+    "users_design_target": 5000,
+    "peak_concurrent_users": 100,
+    "peak_rps_estimate": 15,
+    "data_gb": 10.0,
+    "db_gb": 10.0,
+    "media_gb": 0.0,
+    "egress_gb_month": 73.2,
+    "primary_region": "us",
+    "effective_residency": "none",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": false,
+    "feature_points": 3.5,
+    "team_capacity": 6.0,
+    "effort_ratio": 0.58,
+    "background_jobs": false,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": []
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "Server-rendered templates + HTMX",
+        "score": 7.445,
+        "status": "selected",
+        "top_factors": [
+          "+2.60 team already works in python (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.60 form-heavy CRUD screens render well on the server",
+          "+0.60 gentle learning curve suits a beginner team on a 10-week timeline"
+        ]
+      },
+      {
+        "choice": "Vue + Vite (SPA)",
+        "score": 3.005,
+        "status": "candidate",
+        "top_factors": [
+          "-2.34 no javascript/typescript in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.80 rich client-side interactivity for a web_app",
+          "+0.60 gentle learning curve suits a beginner team on a 10-week timeline"
+        ]
+      },
+      {
+        "choice": "SvelteKit",
+        "score": 2.455,
+        "status": "candidate",
+        "top_factors": [
+          "-2.34 no javascript/typescript in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.80 rich client-side interactivity for a web_app",
+          "+0.60 gentle learning curve suits a beginner team on a 10-week timeline"
+        ]
+      },
+      {
+        "choice": "React + Vite (SPA)",
+        "score": 2.405,
+        "status": "candidate",
+        "top_factors": [
+          "-2.34 no javascript/typescript in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.80 rich client-side interactivity for a web_app",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive web_app",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive web_app",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "Django (Python)",
+        "score": 8.9,
+        "status": "selected",
+        "top_factors": [
+          "+2.60 team already works in python (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "FastAPI (Python)",
+        "score": 8.25,
+        "status": "candidate",
+        "top_factors": [
+          "+2.60 team already works in python (team.languages)",
+          "+1.00 renders the HTMX templates with its built-in template engine",
+          "+0.60 gentle learning curve suits a beginner team on a 10-week timeline",
+          "+0.60 same language as the web/mobile clients: shared types and validation code"
+        ]
+      },
+      {
+        "choice": "ASP.NET Core (.NET 10 LTS)",
+        "score": 4.46,
+        "status": "candidate",
+        "top_factors": [
+          "-2.34 no csharp/fsharp in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Go (net/http + chi)",
+        "score": 3.36,
+        "status": "candidate",
+        "top_factors": [
+          "-2.34 no go in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Ruby on Rails",
+        "score": 2.91,
+        "status": "candidate",
+        "top_factors": [
+          "-2.34 no ruby in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+1.00 renders the HTMX templates with its built-in template engine",
+          "+0.60 gentle learning curve suits a beginner team on a 10-week timeline"
+        ]
+      },
+      {
+        "choice": "Phoenix (Elixir)",
+        "score": 2.61,
+        "status": "candidate",
+        "top_factors": [
+          "-2.34 no elixir in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 renders the HTMX templates with its built-in template engine"
+        ]
+      },
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "server-rendered HTMX templates need a server framework",
+        "fields": [
+          "frontend"
+        ]
+      },
+      {
+        "choice": "Serverless functions",
+        "score": null,
+        "status": "excluded",
+        "reason": "server-rendered HTMX templates need a server framework",
+        "fields": [
+          "frontend"
+        ]
+      },
+      {
+        "choice": "Next.js full-stack (Route Handlers + Server Actions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "only applies when the web frontend is Next.js",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": null,
+        "status": "excluded",
+        "reason": "server-rendered HTMX templates need a server framework",
+        "fields": [
+          "frontend"
+        ]
+      },
+      {
+        "choice": "Appwrite",
+        "score": null,
+        "status": "excluded",
+        "reason": "server-rendered HTMX templates need a server framework",
+        "fields": [
+          "frontend"
+        ]
+      },
+      {
+        "choice": "PocketBase",
+        "score": null,
+        "status": "excluded",
+        "reason": "server-rendered HTMX templates need a server framework",
+        "fields": [
+          "frontend"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "PostgreSQL",
+        "score": 4.7,
+        "status": "selected",
+        "top_factors": [
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": 4.0,
+        "status": "candidate",
+        "top_factors": [
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.55 strong scalability (4/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": 3.6,
+        "status": "candidate",
+        "top_factors": [
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3",
+          "+0.55 strong scalability (4/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Amazon DynamoDB",
+        "score": 3.55,
+        "status": "candidate",
+        "top_factors": [
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "-0.60 high vendor lock-in (proprietary APIs/data model) with lock-in tolerance 'medium'"
+        ]
+      },
+      {
+        "choice": "MongoDB",
+        "score": 3.45,
+        "status": "candidate",
+        "top_factors": [
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3",
+          "+0.55 strong security (4/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "Azure Cosmos DB",
+        "score": 3.3,
+        "status": "candidate",
+        "top_factors": [
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+1.00 multi-region replication for 99.99%"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Cloud SQL for PostgreSQL",
+        "score": 3.139,
+        "status": "selected",
+        "top_factors": [
+          "+3.00 same platform and private network as the application hosting",
+          "-0.66 ~$27+/month at the tiny tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Render Postgres",
+        "score": 0.28,
+        "status": "candidate",
+        "top_factors": [
+          "-0.52 ~$18+/month at the tiny tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "DigitalOcean Managed PostgreSQL",
+        "score": -0.76,
+        "status": "candidate",
+        "top_factors": [
+          "-0.86 ~$45+/month at the tiny tier",
+          "-0.70 DigitalOcean Managed PostgreSQL starts around $45/month against a $100/month total budget",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Neon serverless Postgres",
+        "score": -1.6,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 no managed standby/failover for availability 99.99%",
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "Supabase Postgres",
+        "score": -1.6,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 no managed standby/failover for availability 99.99%",
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "Railway Postgres",
+        "score": -1.805,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 no managed standby/failover for availability 99.99%",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "-0.20 ~$5+/month at the tiny tier"
+        ]
+      },
+      {
+        "choice": "Self-managed PostgreSQL (Patroni/pgBackRest)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "Google Cloud Run",
+        "score": 7.23,
+        "status": "selected",
+        "top_factors": [
+          "+1.00 multi-zone redundancy for availability 99.99%",
+          "+1.00 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "Azure Container Apps",
+        "score": 6.15,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 multi-zone redundancy for availability 99.99%",
+          "+1.00 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "Azure App Service",
+        "score": 5.73,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 multi-zone redundancy for availability 99.99%",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.60 gentle learning curve suits a beginner team on a 10-week timeline",
+          "+0.50 runs the Django (Python) container as-is"
+        ]
+      },
+      {
+        "choice": "DigitalOcean App Platform",
+        "score": 5.23,
+        "status": "candidate",
+        "top_factors": [
+          "+1.20 gentle learning curve suits a beginner team on a 10-week timeline",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "-0.60 limited multi-zone guarantees for 99.99%",
+          "+0.50 runs the Django (Python) container as-is"
+        ]
+      },
+      {
+        "choice": "Render",
+        "score": 5.23,
+        "status": "candidate",
+        "top_factors": [
+          "+1.20 gentle learning curve suits a beginner team on a 10-week timeline",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "-0.60 limited multi-zone guarantees for 99.99%",
+          "+0.50 runs the Django (Python) container as-is"
+        ]
+      },
+      {
+        "choice": "Railway",
+        "score": 4.23,
+        "status": "candidate",
+        "top_factors": [
+          "+1.20 gentle learning curve suits a beginner team on a 10-week timeline",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "-0.60 limited multi-zone guarantees for 99.99%",
+          "+0.50 runs the Django (Python) container as-is"
+        ]
+      },
+      {
+        "choice": "AWS Amplify Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Azure Static Web Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Firebase Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Amazon GameLift Servers",
+        "score": null,
+        "status": "excluded",
+        "reason": "dedicated game-server fleets: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "GitHub Pages",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      }
+    ]
+  }
+}

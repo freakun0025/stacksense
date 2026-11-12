@@ -1,0 +1,1044 @@
+{
+  "scenario_id": "P6",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "cd6eba1b78bfc347",
+  "status": "ok_with_warnings",
+  "summary": "Serverless/BaaS architecture: Supabase serving React Native (Expo) for Android, hosted on Supabase managed platform (ap-south-1 Mumbai). Estimated $25-100/month (within the $100 budget).",
+  "architecture_style": "serverless",
+  "architecture_rationale": {
+    "text": "Supabase provides data, auth and APIs as managed services; custom logic runs as functions, so there is no server fleet to operate. Over-engineering guard: microservices rejected: 2 engineer(s), no DevOps cannot absorb the operational overhead.",
+    "driven_by": [
+      "team.size",
+      "team.has_devops",
+      "priorities.time_to_market"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "React Native (Expo) for Android",
+      "justification": "Mobile - React Native (Expo): Chosen because team already works in javascript (team.languages); strong time-to-market (5/5) with priorities.time_to_market=4; on-device SQLite storage and background sync for offline_support=true; strong cost efficiency (4/5) with priorities.cost=5.",
+      "driven_by": [
+        "team.languages",
+        "priorities.time_to_market",
+        "priorities.maintainability",
+        "requirements.offline_support",
+        "priorities.cost",
+        "project.description"
+      ],
+      "alternatives": [
+        {
+          "choice": "Kotlin + Jetpack Compose (native Android) for Android",
+          "why_not": "No kotlin/java in team.languages: ramp-up time and hiring risk. React Native scores higher on time-to-market and learning curve (fit 5.6 vs 8.2)."
+        },
+        {
+          "choice": "Flutter for Android",
+          "why_not": "No dart in team.languages: ramp-up time and hiring risk. React Native scores higher on time-to-market and learning curve (fit 5.2 vs 8.2)."
+        }
+      ],
+      "tradeoffs": [
+        "JS runtime overhead on very low-end phones (Hermes mitigates)",
+        "Some native modules need custom development builds"
+      ],
+      "fit_score": 8.237,
+      "confidence": "high",
+      "components": [
+        {
+          "platform": "android",
+          "choice": "React Native (Expo)",
+          "version": "Expo SDK (New Architecture)",
+          "kb_id": "expo_rn"
+        }
+      ],
+      "sources": [
+        "https://docs.expo.dev/",
+        "https://reactnative.dev/docs/getting-started"
+      ]
+    },
+    "backend": {
+      "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+      "justification": "Chosen because team already works in javascript (team.languages); strong cost efficiency (5/5) with priorities.cost=5; strong time-to-market (5/5) with priorities.time_to_market=4; BaaS covers auth, data and storage without writing server code. Accepted trade-off: supabase.co was ISP-blocked in India in Feb 2026; needs a custom domain.",
+      "driven_by": [
+        "priorities.time_to_market",
+        "team.languages",
+        "priorities.cost",
+        "project.type",
+        "infrastructure.data_residency",
+        "priorities.security"
+      ],
+      "alternatives": [
+        {
+          "choice": "Serverless functions",
+          "why_not": "Sync batches and large uploads run into function time/size limits. Supabase scores higher on fit for the project type and time-to-market (fit 8.9 vs 9.0)."
+        },
+        {
+          "choice": "Django (Python)",
+          "why_not": "Supabase scores higher on fit for the project type and cost (fit 7.7 vs 9.0)."
+        },
+        {
+          "choice": "Firebase (Firestore + Auth + Functions)",
+          "why_not": "Excluded by hard constraint: its Authentication product has no data-location choice (infrastructure.data_residency)."
+        }
+      ],
+      "tradeoffs": [
+        "Complex workflows end up in Edge Functions or SQL functions",
+        "supabase.co was ISP-blocked in India in Feb 2026 (a custom domain mitigates)"
+      ],
+      "fit_score": 8.997,
+      "confidence": "low",
+      "kb_id": "supabase",
+      "sources": [
+        "https://supabase.com/docs",
+        "https://supabase.com/docs/guides/platform/regions",
+        "https://supabase.com/pricing"
+      ]
+    },
+    "database": {
+      "choice": "PostgreSQL on Supabase Postgres (ap-south-1 Mumbai)",
+      "justification": "Chosen because Supabase is built on PostgreSQL; strong maintainability (5/5) with priorities.maintainability=4; strong security (5/5) with priorities.security=3; strong cost efficiency (4/5) with priorities.cost=5. Managed as Supabase Postgres: the Supabase project's own Postgres; same platform and private network as the application hosting.",
+      "driven_by": [
+        "priorities.maintainability",
+        "priorities.security",
+        "priorities.cost",
+        "project.description",
+        "priorities.time_to_market",
+        "priorities.performance",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "TimescaleDB (PostgreSQL extension)",
+          "why_not": "Would bypass the Supabase data model. PostgreSQL on Supabase Postgres scores higher on maintainability and security (fit -0.6 vs 12.3)."
+        },
+        {
+          "choice": "MongoDB",
+          "why_not": "Would bypass the Supabase data model. PostgreSQL on Supabase Postgres scores higher on maintainability and cost (fit -1.4 vs 12.3)."
+        },
+        {
+          "choice": "DigitalOcean Managed PostgreSQL",
+          "why_not": "Supabase already includes Postgres. Supabase Postgres scores higher on integration with the hosting platform (fit -6.4 vs 8.3)."
+        },
+        {
+          "choice": "Neon serverless Postgres",
+          "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+        }
+      ],
+      "tradeoffs": [
+        "Single-writer primary: write scale beyond one large node needs partitioning/sharding",
+        "Vacuum and connection pooling need attention at scale",
+        "~$25+/month at the small tier"
+      ],
+      "fit_score": 12.333,
+      "confidence": "high",
+      "kb_id": "postgresql",
+      "version": "PostgreSQL 17/18",
+      "sources": [
+        "https://www.postgresql.org/docs/",
+        "https://www.postgresql.org/docs/current/textsearch.html",
+        "https://postgis.net/documentation/"
+      ],
+      "engine": "PostgreSQL",
+      "offering": "Supabase Postgres",
+      "offering_kb_id": "supabase_pg"
+    },
+    "hosting": {
+      "choice": "Supabase managed platform (ap-south-1 Mumbai)",
+      "justification": "The Android app talks directly to Supabase (database, auth, storage and functions are all managed in ap-south-1 Mumbai), so there is no web tier or server to host.",
+      "driven_by": [
+        "project.platforms",
+        "infrastructure.data_residency",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "Google Cloud Run (asia-south1 Mumbai)",
+          "why_not": "Only needed once custom server code outgrows the BaaS's edge functions; today it would be a deployment target with nothing to deploy."
+        },
+        {
+          "choice": "Azure Static Web Apps",
+          "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+        }
+      ],
+      "tradeoffs": [
+        "Complex workflows end up in Edge Functions or SQL functions",
+        "supabase.co was ISP-blocked in India in Feb 2026 (a custom domain mitigates)"
+      ],
+      "fit_score": null,
+      "confidence": "high",
+      "kb_id": "supabase"
+    },
+    "supporting": [
+      {
+        "layer": "queue",
+        "choice": "Supabase Queues (pgmq) + pg_cron (jobs in the primary database)",
+        "justification": "Chosen because no extra infrastructure at small scale; jobs commit with business data; strong cost efficiency (5/5) with priorities.cost=5; lives in the primary database already in the stack; strong time-to-market (5/5) with priorities.time_to_market=4.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "requirements.offline_support",
+          "scale.workload",
+          "scale.users_12_months",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "priorities.maintainability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Google Cloud Tasks / Pub/Sub",
+            "why_not": "Adds a separate hyperscaler account next to the supabase platform. Supabase Queues scores higher on fit for the user scale and integration with the database (fit 2.8 vs 6.8)."
+          },
+          {
+            "choice": "Amazon SQS (+ EventBridge Scheduler)",
+            "why_not": "Adds a separate hyperscaler account next to the supabase platform. Supabase Queues scores higher on fit for the user scale and integration with the database (fit 2.8 vs 6.8)."
+          }
+        ],
+        "tradeoffs": [
+          "Throughput bounded by the primary database"
+        ],
+        "fit_score": 6.787,
+        "confidence": "high",
+        "kb_id": "pg_queue",
+        "sources": [
+          "https://github.com/timgit/pg-boss",
+          "https://www.jobrunr.io/en/documentation/",
+          "https://www.hangfire.io/"
+        ]
+      },
+      {
+        "layer": "auth",
+        "choice": "Supabase Auth (ap-south-1 Mumbai)",
+        "justification": "Chosen because phone OTP built into the chosen BaaS; strong cost efficiency (5/5) with priorities.cost=5; same cloud/platform and region as the application; strong time-to-market (5/5) with priorities.time_to_market=4.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.security",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon Cognito",
+            "why_not": "Adds a separate hyperscaler account next to the supabase platform. Supabase Auth scores higher on integration with the backend and time-to-market (fit 0.9 vs 6.8)."
+          },
+          {
+            "choice": "Firebase Authentication",
+            "why_not": "Excluded by hard constraint: cannot pin data location (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.82,
+        "confidence": "high",
+        "kb_id": "supabase_auth",
+        "sources": [
+          "https://supabase.com/docs"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "SMS OTP delivery",
+        "choice": "MSG91 OTP (DLT-registered)",
+        "justification": "Chosen because Indian DLT-registered SMS route; phone numbers processed in India; strong cost efficiency (5/5) with priorities.cost=5; strong time-to-market (5/5) with priorities.time_to_market=4; strong maintainability (4/5) with priorities.maintainability=4.",
+        "driven_by": [
+          "requirements.auth",
+          "infrastructure.data_residency",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon SNS / End User Messaging SMS",
+            "why_not": "Adds a separate hyperscaler account next to the supabase platform. MSG91 OTP scores higher on data residency and time-to-market (fit 1.4 vs 5.8)."
+          },
+          {
+            "choice": "Azure Communication Services SMS",
+            "why_not": "Adds a separate hyperscaler account next to the supabase platform. MSG91 OTP scores higher on data residency and cost (fit 1.3 vs 5.8)."
+          },
+          {
+            "choice": "Twilio Verify",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "India-focused"
+        ],
+        "fit_score": 5.82,
+        "confidence": "high",
+        "kb_id": "msg91",
+        "sources": [
+          "https://msg91.com/",
+          "https://www.trai.gov.in/"
+        ]
+      },
+      {
+        "layer": "storage",
+        "choice": "Supabase Storage (ap-south-1 Mumbai)",
+        "justification": "Chosen because same Supabase project and access policies; same cloud/platform and region as the application; strong cost efficiency (5/5) with priorities.cost=5; strong time-to-market (5/5) with priorities.time_to_market=4.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "project.description",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "DigitalOcean Spaces",
+            "why_not": "Supabase Storage scores higher on integration with the backend and integration with the hosting platform (fit 3.8 vs 10.1)."
+          },
+          {
+            "choice": "Google Cloud Storage",
+            "why_not": "Adds a separate hyperscaler account next to the supabase platform. Supabase Storage scores higher on integration with the backend and cost (fit 3.5 vs 10.1)."
+          },
+          {
+            "choice": "Cloudflare R2",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 10.12,
+        "confidence": "high",
+        "kb_id": "supabase_storage",
+        "sources": [
+          "https://supabase.com/docs/guides/storage/uploads/resumable-uploads"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "GitHub Actions",
+        "justification": "Chosen because strong cost efficiency (5/5) with priorities.cost=5; strong maintainability (5/5) with priorities.maintainability=4; strong time-to-market (5/5) with priorities.time_to_market=4; free minutes, large action marketplace, works with any cloud.",
+        "driven_by": [
+          "team.has_devops",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.performance",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Pipelines",
+            "why_not": "GitHub Actions scores higher on time-to-market and cost (fit 3.4 vs 5.3)."
+          },
+          {
+            "choice": "GitLab CI (self-managed)",
+            "why_not": "Self-hosting CI is unnecessary; needs ongoing operations work but team.has_devops=false (ops burden 3/5). GitHub Actions scores higher on time-to-market (fit -0.2 vs 5.3)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.32,
+        "confidence": "medium",
+        "kb_id": "github_actions",
+        "sources": [
+          "https://docs.github.com/actions"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "purpose": "mobile build and release",
+        "choice": "Expo EAS Build/Submit/Update",
+        "justification": "Chosen because native build pipeline for React Native (Expo); strong time-to-market (5/5) with priorities.time_to_market=4; strong cost efficiency (4/5) with priorities.cost=5; strong maintainability (4/5) with priorities.maintainability=4.",
+        "driven_by": [
+          "project.platforms",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.security",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "fastlane on GitHub Actions",
+            "why_not": "Expo EAS Build/Submit/Update scores higher on integration with the frontend and time-to-market (fit 3.4 vs 6.2)."
+          },
+          {
+            "choice": "Codemagic",
+            "why_not": "Expo EAS Build/Submit/Update scores higher on integration with the frontend (fit 3.2 vs 6.2)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.237,
+        "confidence": "high",
+        "kb_id": "eas",
+        "sources": [
+          "https://docs.expo.dev/build/introduction/"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Supabase managed platform analytics/logs",
+        "justification": "Chosen because the platform's built-in logs, metrics and log drains cover a small team; strong cost efficiency (5/5) with priorities.cost=5; strong time-to-market (5/5) with priorities.time_to_market=4; fully managed: no operations work for a team without DevOps.",
+        "driven_by": [
+          "requirements.availability",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Prometheus + Grafana + Loki (self-hosted)",
+            "why_not": "Needs ongoing operations work but team.has_devops=false (ops burden 3/5). Supabase managed platform analytics/logs scores higher on integration with the hosting platform and time-to-market (fit 1.0 vs 4.4)."
+          },
+          {
+            "choice": "Azure Monitor Application Insights",
+            "why_not": "Would add a separate cloud account just for monitoring. Supabase managed platform analytics/logs scores higher on cost (fit -0.2 vs 4.4)."
+          },
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 4.42,
+        "confidence": "high",
+        "kb_id": "host_logs",
+        "sources": [
+          "https://vercel.com/docs",
+          "https://docs.netlify.com/",
+          "https://developers.cloudflare.com/workers/static-assets/"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "on-device offline store and sync",
+        "choice": "WatermelonDB (SQLite) + custom sync endpoint",
+        "justification": "Chosen because offline store designed for React Native (Expo); strong cost efficiency (5/5) with priorities.cost=5; team already works in javascript (team.languages); strong maintainability (4/5) with priorities.maintainability=4.",
+        "driven_by": [
+          "requirements.offline_support",
+          "priorities.cost",
+          "team.languages",
+          "priorities.maintainability",
+          "priorities.time_to_market",
+          "priorities.performance",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Room + WorkManager sync queue",
+            "why_not": "No kotlin/java in team.languages: ramp-up time and hiring risk. WatermelonDB scores higher on integration with the frontend and time-to-market (fit 2.8 vs 7.3)."
+          },
+          {
+            "choice": "Drift (SQLite) + background sync",
+            "why_not": "No dart in team.languages: ramp-up time and hiring risk. WatermelonDB scores higher on integration with the frontend (fit 2.5 vs 7.3)."
+          },
+          {
+            "choice": "PowerSync (Postgres <-> SQLite sync)",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "Conflict rules and sync endpoint are yours to write"
+        ],
+        "fit_score": 7.343,
+        "confidence": "high",
+        "kb_id": "watermelondb",
+        "sources": [
+          "https://watermelondb.dev/docs",
+          "https://docs.expo.dev/versions/latest/sdk/sqlite/"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "geospatial queries",
+        "choice": "PostGIS extension",
+        "justification": "Chosen because strong cost efficiency (5/5) with priorities.cost=5; strong maintainability (5/5) with priorities.maintainability=4; strong performance (5/5) with priorities.performance=3; strong time-to-market (4/5) with priorities.time_to_market=4.",
+        "driven_by": [
+          "project.description",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.time_to_market",
+          "priorities.security",
+          "team.has_devops"
+        ],
+        "alternatives": [],
+        "tradeoffs": [],
+        "fit_score": 4.17,
+        "confidence": "high",
+        "kb_id": "postgis",
+        "sources": [
+          "https://postgis.net/documentation/"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 25,
+    "max": 100,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 2,000 users at 12 months, 200 peak concurrent users, ~40 req/s peak (scale tier: small)",
+      "Data: ~30 GB in the database, ~70 GB of media, ~59 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work"
+    ],
+    "breakdown": [
+      {
+        "component": "Supabase Postgres",
+        "min": 27.75,
+        "max": 62.75,
+        "basis": "small tier instance; +22 GB storage above 8 GB"
+      },
+      {
+        "component": "Supabase Auth (ap-south-1 Mumbai)",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "2,000 MAU (within free tier)"
+      },
+      {
+        "component": "MSG91 OTP (DLT-registered)",
+        "min": 1.5,
+        "max": 8.0,
+        "basis": "0.3-1 OTP per user per month x 2,000 users at $0.0025-0.004 per SMS"
+      },
+      {
+        "component": "Supabase Storage (ap-south-1 Mumbai)",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "70 GB stored, ~35 GB/month served"
+      },
+      {
+        "component": "GitHub Actions",
+        "min": 0.0,
+        "max": 10.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Expo EAS Build/Submit/Update",
+        "min": 0.0,
+        "max": 19.0,
+        "basis": "small tier"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "REGIONAL_NETWORK_BLOCK_RISK",
+      "severity": "warning",
+      "message": "supabase.co was blocked by several Indian ISPs in Feb 2026 (since restored). Serve the API on your own custom domain so clients never depend on supabase.co DNS.",
+      "fields": [
+        "infrastructure.data_residency"
+      ]
+    },
+    {
+      "code": "CERT_IN_LOGS",
+      "severity": "info",
+      "message": "CERT-In Directions (2022): keep ICT system logs for 180 days within Indian jurisdiction.",
+      "fields": [
+        "infrastructure.data_residency"
+      ]
+    },
+    {
+      "code": "DPDP_OBLIGATIONS",
+      "severity": "info",
+      "message": "DPDP Act 2023: consent notices, purpose limitation, breach intimation to the Data Protection Board and erasure on request. India residency is enforced because data_residency=india.",
+      "fields": [
+        "compliance"
+      ]
+    },
+    {
+      "code": "OFFLINE_CONFLICT_RESOLUTION",
+      "severity": "info",
+      "message": "Offline writes need a conflict policy: client-generated UUIDs, server-authoritative merge or per-field last-write-wins, and idempotent sync endpoints.",
+      "fields": [
+        "requirements.offline_support"
+      ]
+    }
+  ],
+  "assumptions": [
+    "requirements.p95_latency_ms is null: no latency-driven selection applied (interactive apps assume ~500 ms is acceptable)"
+  ],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "small",
+    "users_design_target": 2000,
+    "peak_concurrent_users": 200,
+    "peak_rps_estimate": 40,
+    "data_gb": 100.0,
+    "db_gb": 30.0,
+    "media_gb": 70.0,
+    "egress_gb_month": 58.6,
+    "primary_region": "india",
+    "effective_residency": "india",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": false,
+    "feature_points": 10.0,
+    "team_capacity": 18.0,
+    "effort_ratio": 0.56,
+    "background_jobs": true,
+    "geospatial": true,
+    "ledger": false,
+    "low_end_devices": true,
+    "audit_trail": false,
+    "description_signals": [
+      "geospatial",
+      "low_end_devices",
+      "poor_network"
+    ]
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "React Native (Expo)",
+        "score": 8.237,
+        "status": "selected",
+        "top_factors": [
+          "+1.98 team already works in javascript (team.languages)",
+          "+1.47 strong time-to-market (5/5) with priorities.time_to_market=4",
+          "+1.00 on-device SQLite storage and background sync for offline_support=true",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5"
+        ]
+      },
+      {
+        "choice": "Kotlin + Jetpack Compose (native Android)",
+        "score": 5.571,
+        "status": "candidate",
+        "top_factors": [
+          "-1.78 no kotlin/java in team.languages: ramp-up time and hiring risk",
+          "+1.47 strong maintainability (5/5) with priorities.maintainability=4",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.00 compiled runtime keeps memory low on the low-end devices in the description"
+        ]
+      },
+      {
+        "choice": "Flutter",
+        "score": 5.241,
+        "status": "candidate",
+        "top_factors": [
+          "-1.78 no dart in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.00 compiled runtime keeps memory low on the low-end devices in the description",
+          "+1.00 on-device SQLite storage and background sync for offline_support=true"
+        ]
+      },
+      {
+        "choice": "Ionic + Capacitor",
+        "score": 5.18,
+        "status": "candidate",
+        "top_factors": [
+          "+1.98 team already works in javascript (team.languages)",
+          "+1.83 strong cost efficiency (5/5) with priorities.cost=5",
+          "+1.47 strong time-to-market (5/5) with priorities.time_to_market=4",
+          "-0.80 WebView apps struggle on the low-end devices in the description"
+        ]
+      },
+      {
+        "choice": "Swift + SwiftUI (native iOS)",
+        "score": null,
+        "status": "excluded",
+        "reason": "does not target android (project.platforms)",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Unity",
+        "score": null,
+        "status": "excluded",
+        "reason": "game engine: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Godot",
+        "score": null,
+        "status": "excluded",
+        "reason": "game engine: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": 8.997,
+        "status": "selected",
+        "top_factors": [
+          "+1.98 team already works in javascript (team.languages)",
+          "+1.83 strong cost efficiency (5/5) with priorities.cost=5",
+          "+1.47 strong time-to-market (5/5) with priorities.time_to_market=4",
+          "+1.20 BaaS covers auth, data and storage without writing server code"
+        ]
+      },
+      {
+        "choice": "Serverless functions",
+        "score": 8.863,
+        "status": "candidate",
+        "top_factors": [
+          "+1.98 team already works in javascript (team.languages)",
+          "+1.83 strong cost efficiency (5/5) with priorities.cost=5",
+          "+1.47 strong time-to-market (5/5) with priorities.time_to_market=4",
+          "+0.80 low, bursty load suits pay-per-request functions"
+        ]
+      },
+      {
+        "choice": "Django (Python)",
+        "score": 7.697,
+        "status": "candidate",
+        "top_factors": [
+          "+1.98 team already works in python (team.languages)",
+          "+1.47 strong maintainability (5/5) with priorities.maintainability=4",
+          "+1.47 strong time-to-market (5/5) with priorities.time_to_market=4",
+          "+1.10 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "PocketBase",
+        "score": 7.563,
+        "status": "candidate",
+        "top_factors": [
+          "+1.98 team already works in javascript (team.languages)",
+          "+1.83 strong cost efficiency (5/5) with priorities.cost=5",
+          "+1.47 strong time-to-market (5/5) with priorities.time_to_market=4",
+          "+1.20 BaaS covers auth, data and storage without writing server code"
+        ]
+      },
+      {
+        "choice": "NestJS (Node.js LTS, TypeScript)",
+        "score": 6.813,
+        "status": "candidate",
+        "top_factors": [
+          "+1.98 team already works in javascript (team.languages)",
+          "+1.47 strong maintainability (5/5) with priorities.maintainability=4",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5",
+          "+0.73 strong time-to-market (4/5) with priorities.time_to_market=4"
+        ]
+      },
+      {
+        "choice": "FastAPI (Python)",
+        "score": 6.38,
+        "status": "candidate",
+        "top_factors": [
+          "+1.98 team already works in python (team.languages)",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5",
+          "+0.73 strong maintainability (4/5) with priorities.maintainability=4",
+          "+0.73 strong time-to-market (4/5) with priorities.time_to_market=4"
+        ]
+      },
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "its Authentication product has no data-location choice (infrastructure.data_residency)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Next.js full-stack (Route Handlers + Server Actions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "only applies when the web frontend is Next.js",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Appwrite",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "PostgreSQL",
+        "score": 12.333,
+        "status": "selected",
+        "top_factors": [
+          "+6.00 Supabase is built on PostgreSQL",
+          "+1.47 strong maintainability (5/5) with priorities.maintainability=4",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5"
+        ]
+      },
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": -0.6,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Supabase data model",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5",
+          "+0.80 geospatial indexing for the GPS/location data"
+        ]
+      },
+      {
+        "choice": "MongoDB",
+        "score": -1.35,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Supabase data model",
+          "+1.47 strong time-to-market (5/5) with priorities.time_to_market=4",
+          "+0.80 geospatial indexing for the GPS/location data",
+          "+0.73 strong scalability (5/5) with priorities.scalability=2"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": -1.75,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Supabase data model",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5",
+          "+0.73 strong maintainability (4/5) with priorities.maintainability=4",
+          "+0.73 strong time-to-market (4/5) with priorities.time_to_market=4"
+        ]
+      },
+      {
+        "choice": "Amazon DynamoDB",
+        "score": -2.35,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Supabase data model",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5"
+        ]
+      },
+      {
+        "choice": "SQLite (embedded) + Litestream",
+        "score": -2.65,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Supabase data model",
+          "-2.00 single embedded file cannot serve multiple instances or HA",
+          "+1.83 strong cost efficiency (5/5) with priorities.cost=5",
+          "+1.47 strong time-to-market (5/5) with priorities.time_to_market=4"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Supabase Postgres",
+        "score": 8.346,
+        "status": "selected",
+        "top_factors": [
+          "+6.00 the Supabase project's own Postgres",
+          "+3.00 same platform and private network as the application hosting",
+          "-1.05 ~$25+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "DigitalOcean Managed PostgreSQL",
+        "score": -6.371,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 Supabase already includes Postgres",
+          "-0.77 ~$15+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "Azure Database for PostgreSQL (Flexible Server)",
+        "score": -8.267,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 Supabase already includes Postgres",
+          "-1.50 adds a hyperscaler account next to supabase hosting",
+          "-1.17 ~$30+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "Cloud SQL for PostgreSQL",
+        "score": -8.267,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 Supabase already includes Postgres",
+          "-1.50 adds a hyperscaler account next to supabase hosting",
+          "-1.17 ~$30+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "Amazon RDS for PostgreSQL",
+        "score": -8.267,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 Supabase already includes Postgres",
+          "-1.50 adds a hyperscaler account next to supabase hosting",
+          "-1.17 ~$30+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "Amazon Aurora PostgreSQL",
+        "score": -11.514,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 Supabase already includes Postgres",
+          "-2.26 Amazon Aurora PostgreSQL starts around $120/month against a $100/month total budget",
+          "-2.16 ~$120+/month at the small tier",
+          "-1.50 adds a hyperscaler account next to supabase hosting"
+        ]
+      },
+      {
+        "choice": "Neon serverless Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Railway Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Render Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Self-managed PostgreSQL (Patroni/pgBackRest)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": 3.0,
+        "status": "selected",
+        "top_factors": [
+          "+3.00 mobile clients talk directly to the managed BaaS; there is no web tier to host"
+        ]
+      },
+      {
+        "choice": "Google Cloud Run",
+        "score": 7.897,
+        "status": "candidate",
+        "top_factors": [
+          "+1.67 strong cost efficiency (5/5) with priorities.cost=5",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.80 autoscaling absorbs spiky traffic",
+          "+0.67 strong maintainability (4/5) with priorities.maintainability=4"
+        ]
+      },
+      {
+        "choice": "Azure Container Apps",
+        "score": 7.067,
+        "status": "candidate",
+        "top_factors": [
+          "+1.67 strong cost efficiency (5/5) with priorities.cost=5",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.80 autoscaling absorbs spiky traffic",
+          "+0.67 strong maintainability (4/5) with priorities.maintainability=4"
+        ]
+      },
+      {
+        "choice": "DigitalOcean App Platform",
+        "score": 6.047,
+        "status": "candidate",
+        "top_factors": [
+          "+1.33 strong time-to-market (5/5) with priorities.time_to_market=4",
+          "+0.83 strong cost efficiency (4/5) with priorities.cost=5",
+          "+0.70 gentle learning curve suits a mixed team on a 10-week timeline",
+          "+0.67 strong maintainability (4/5) with priorities.maintainability=4"
+        ]
+      },
+      {
+        "choice": "Azure Static Web Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot pin data location (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Fly.io",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Amazon GameLift Servers",
+        "score": null,
+        "status": "excluded",
+        "reason": "dedicated game-server fleets: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "GitHub Pages",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot pin data location (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Netlify",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,927 @@
+{
+  "scenario_id": "E16",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "d260e10572ce9185",
+  "status": "ok_with_warnings",
+  "summary": "Hybrid architecture: Django + TimescaleDB serving Vue + Vite (SPA), hosted on AWS ECS on Fargate (us-east-1 N. Virginia). Estimated $2,500-9,400/month (above the $1,500 budget).",
+  "architecture_style": "hybrid",
+  "architecture_rationale": {
+    "text": "A modular API service for accounts, billing and persistence plus an ingestion pipeline that scale independently for 20,000 concurrent connections. Over-engineering guard: microservices rejected: 4 engineer(s) cannot absorb the operational overhead.",
+    "driven_by": [
+      "project.type",
+      "requirements.realtime",
+      "scale.peak_concurrent_users"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "Vue + Vite (SPA)",
+      "justification": "Web - Vue + Vite (SPA): Chosen because team already works in typescript (team.languages); strong cost efficiency (5/5) with priorities.cost=5 (budget re-plan); strong maintainability (4/5) with priorities.maintainability=3; strong performance (4/5) with priorities.performance=3.",
+      "driven_by": [
+        "team.languages",
+        "priorities.cost",
+        "priorities.maintainability",
+        "priorities.performance",
+        "priorities.time_to_market",
+        "priorities.security"
+      ],
+      "alternatives": [
+        {
+          "choice": "React + Vite (SPA)",
+          "why_not": "Vue + Vite scores higher on learning curve (fit 6.3 vs 6.6)."
+        },
+        {
+          "choice": "SvelteKit",
+          "why_not": "Vue + Vite scores higher on cost (fit 6.1 vs 6.6)."
+        }
+      ],
+      "tradeoffs": [],
+      "fit_score": 6.578,
+      "confidence": "low",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "Vue + Vite (SPA)",
+          "version": "Vue 3",
+          "kb_id": "vue_vite"
+        }
+      ],
+      "sources": [
+        "https://vuejs.org/guide/",
+        "https://vite.dev/guide/"
+      ]
+    },
+    "backend": {
+      "choice": "Django (Python)",
+      "justification": "Chosen because team already works in python (team.languages); strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3; strong time-to-market (5/5) with priorities.time_to_market=3.",
+      "driven_by": [
+        "team.languages",
+        "priorities.maintainability",
+        "priorities.security",
+        "priorities.time_to_market",
+        "priorities.cost",
+        "project.type"
+      ],
+      "alternatives": [
+        {
+          "choice": "NestJS (Node.js LTS, TypeScript)",
+          "why_not": "Django scores higher on security and time-to-market (fit 7.7 vs 7.9)."
+        },
+        {
+          "choice": "Fastify (Node.js LTS, TypeScript)",
+          "why_not": "Minimal framework leaves domain structure to the team. Django scores higher on maintainability and security (fit 6.4 vs 7.9)."
+        },
+        {
+          "choice": "Firebase (Firestore + Auth + Functions)",
+          "why_not": "Excluded by hard constraint: cloud_preference=aws: Firebase (Firestore + Auth + Functions) is a Google Cloud service."
+        }
+      ],
+      "tradeoffs": [
+        "Sync-first; WebSockets need Channels/ASGI",
+        "Heavier conventions for tiny services"
+      ],
+      "fit_score": 7.867,
+      "confidence": "low",
+      "kb_id": "django",
+      "version": "Django 5.2 LTS",
+      "sources": [
+        "https://docs.djangoproject.com/",
+        "https://survey.stackoverflow.co/2025/"
+      ]
+    },
+    "database": {
+      "choice": "TimescaleDB (PostgreSQL extension) on Timescale Cloud (TigerData)",
+      "justification": "Chosen because time-series hypertables for device telemetry; relational integrity and transactions for a iot domain; strong performance (5/5) with priorities.performance=3; strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan). Managed as Timescale Cloud (TigerData): managed failover/standby available.",
+      "driven_by": [
+        "project.type",
+        "priorities.performance",
+        "priorities.cost",
+        "priorities.maintainability",
+        "priorities.scalability",
+        "priorities.security",
+        "budget.monthly_infra_usd",
+        "requirements.availability"
+      ],
+      "alternatives": [
+        {
+          "choice": "PostgreSQL",
+          "why_not": "TimescaleDB scores higher on fit for the project type and performance (fit 6.6 vs 7.9)."
+        },
+        {
+          "choice": "MySQL",
+          "why_not": "TimescaleDB scores higher on fit for the project type and performance (fit 5.5 vs 7.9)."
+        },
+        {
+          "choice": "Google BigQuery",
+          "why_not": "Excluded by hard constraint: cloud_preference=aws: Google BigQuery is a Google Cloud service."
+        },
+        {
+          "choice": "Self-managed TimescaleDB",
+          "why_not": "Excluded by hard constraint: deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services."
+        }
+      ],
+      "tradeoffs": [
+        "Managed service availability varies by region",
+        "~$600+/month at the large tier",
+        "Timescale Cloud (TigerData) starts around $600/month against a $1,500/month total budget"
+      ],
+      "fit_score": 7.867,
+      "confidence": "medium",
+      "kb_id": "timescaledb",
+      "sources": [
+        "https://docs.timescale.com/"
+      ],
+      "engine": "TimescaleDB (PostgreSQL extension)",
+      "offering": "Timescale Cloud (TigerData)",
+      "offering_kb_id": "timescale_cloud"
+    },
+    "hosting": {
+      "choice": "AWS ECS on Fargate (us-east-1 N. Virginia)",
+      "justification": "Chosen because strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; runs the Django (Python) container as-is; strong maintainability (4/5) with priorities.maintainability=3.",
+      "driven_by": [
+        "priorities.scalability",
+        "priorities.security",
+        "priorities.maintainability",
+        "priorities.performance"
+      ],
+      "alternatives": [
+        {
+          "choice": "AWS Elastic Beanstalk",
+          "why_not": "Weaker maintainability (2/5) with priorities.maintainability=3. AWS ECS on Fargate scores higher on scalability and security (fit 2.8 vs 3.6)."
+        },
+        {
+          "choice": "Managed Kubernetes (EKS / GKE / AKS)",
+          "why_not": "Over-engineering for 1,000 users (pays off beyond ~1,000,000); Managed Kubernetes (EKS / GKE / AKS) starts around $1,200/month against a $1,500/month total budget (fit -3.8 vs 3.6)."
+        },
+        {
+          "choice": "Google Cloud Run",
+          "why_not": "Excluded by hard constraint: cloud_preference=aws: Google Cloud Run is a Google Cloud service."
+        }
+      ],
+      "tradeoffs": [
+        "VPC, load balancer and NAT setup add fixed cost and complexity"
+      ],
+      "fit_score": 3.65,
+      "confidence": "medium",
+      "kb_id": "ecs_fargate",
+      "sources": [
+        "https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html",
+        "https://aws.amazon.com/fargate/pricing/",
+        "https://docs.aws.amazon.com/apprunner/latest/dg/apprunner-availability-change.html"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "cache",
+        "choice": "Amazon ElastiCache for Valkey (us-east-1 N. Virginia)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3.",
+        "driven_by": [
+          "requirements.realtime",
+          "scale.peak_concurrent_users",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Valkey (self-hosted)",
+            "why_not": "Self-hosting another service when a managed option exists. Amazon ElastiCache for Valkey scores higher on integration with the hosting platform and scalability (fit 2.8 vs 6.2)."
+          },
+          {
+            "choice": "Azure Managed Redis",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Azure Managed Redis is a Azure service."
+          }
+        ],
+        "tradeoffs": [
+          "AWS-only; VPC access"
+        ],
+        "fit_score": 6.183,
+        "confidence": "high",
+        "kb_id": "elasticache",
+        "sources": [
+          "https://aws.amazon.com/elasticache/pricing/",
+          "https://valkey.io/"
+        ]
+      },
+      {
+        "layer": "auth",
+        "choice": "Django auth + django-allauth",
+        "justification": "Chosen because strong cost efficiency (5/5) with priorities.cost=5 (budget re-plan); auth inside the backend; no per-MAU fees; strong maintainability (4/5) with priorities.maintainability=3; strong performance (4/5) with priorities.performance=3.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon Cognito",
+            "why_not": "Django auth + django-allauth scores higher on authentication fit and cost (fit 3.3 vs 3.7)."
+          },
+          {
+            "choice": "WorkOS (AuthKit + SSO)",
+            "why_not": "Django auth + django-allauth scores higher on cost and authentication fit (fit 2.5 vs 3.7)."
+          },
+          {
+            "choice": "Microsoft Entra ID",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Microsoft Entra ID is a Azure service."
+          }
+        ],
+        "tradeoffs": [
+          "You own password storage, rate limiting and MFA flows"
+        ],
+        "fit_score": 3.717,
+        "confidence": "low",
+        "kb_id": "framework_auth",
+        "sources": [
+          "https://www.better-auth.com/docs",
+          "https://learn.microsoft.com/aspnet/core/",
+          "https://spring.io/projects/spring-boot"
+        ]
+      },
+      {
+        "layer": "cdn",
+        "choice": "Amazon CloudFront",
+        "justification": "Chosen because same cloud/platform and region as the application; strong cost efficiency (5/5) with priorities.cost=5 (budget re-plan); strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3.",
+        "driven_by": [
+          "scale.users_12_months",
+          "priorities.cost",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.maintainability",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "Cloudflare CDN (free/pro plan)",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Cloudflare CDN (free/pro plan) runs outside AWS."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.467,
+        "confidence": "high",
+        "kb_id": "cloudfront",
+        "sources": [
+          "https://aws.amazon.com/cloudfront/pricing/"
+        ]
+      },
+      {
+        "layer": "realtime",
+        "choice": "Django Channels (ASGI) + Redis/Valkey pub/sub backplane",
+        "justification": "Chosen because messages stay inside your own backend and region; strong cost efficiency (5/5) with priorities.cost=5 (budget re-plan); full control of the hot path for 20,000 live connections; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "requirements.realtime",
+          "priorities.cost",
+          "scale.peak_concurrent_users",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Ably",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Ably runs outside AWS."
+          }
+        ],
+        "tradeoffs": [
+          "Multi-instance fan-out needs a pub/sub backplane (Redis/Valkey)"
+        ],
+        "fit_score": 5.717,
+        "confidence": "high",
+        "kb_id": "ws_native",
+        "sources": [
+          "https://socket.io/docs/v4/",
+          "https://learn.microsoft.com/aspnet/core/signalr/introduction",
+          "https://hexdocs.pm/phoenix/overview.html"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "GitHub Actions",
+        "justification": "Chosen because strong cost efficiency (5/5) with priorities.cost=5 (budget re-plan); free minutes, large action marketplace, works with any cloud; strong maintainability (5/5) with priorities.maintainability=3; strong scalability (5/5) with priorities.scalability=3.",
+        "driven_by": [
+          "team.has_devops",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.performance",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "GitLab CI (self-managed)",
+            "why_not": "Self-hosting CI is unnecessary. GitHub Actions scores higher on time-to-market and cost (fit 1.2 vs 4.8)."
+          },
+          {
+            "choice": "Azure Pipelines",
+            "why_not": "Different cloud from the application hosting. GitHub Actions scores higher on time-to-market and cost (fit 1.0 vs 4.8)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 4.767,
+        "confidence": "high",
+        "kb_id": "github_actions",
+        "sources": [
+          "https://docs.github.com/actions"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Amazon CloudWatch + X-Ray (OpenTelemetry) (us-east-1 N. Virginia)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan).",
+        "driven_by": [
+          "requirements.availability",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Amazon CloudWatch + X-Ray scores higher on integration with the hosting platform and scalability (fit 3.5 vs 5.5)."
+          },
+          {
+            "choice": "Prometheus + Grafana + Loki (self-hosted)",
+            "why_not": "Self-hosting another service when a managed option exists. Amazon CloudWatch + X-Ray scores higher on integration with the hosting platform and time-to-market (fit 1.9 vs 5.5)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.533,
+        "confidence": "high",
+        "kb_id": "cloudwatch",
+        "sources": [
+          "https://aws.amazon.com/cloudwatch/pricing/",
+          "https://opentelemetry.io/docs/"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "transactional notifications",
+        "choice": "Amazon SES (us-east-1 N. Virginia)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong cost efficiency (5/5) with priorities.cost=5 (budget re-plan); strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.cost",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "Resend",
+            "why_not": "Amazon SES scores higher on integration with the hosting platform and cost (fit 2.7 vs 6.1)."
+          },
+          {
+            "choice": "On-prem SMTP relay",
+            "why_not": "In-network SMTP relay. Amazon SES scores higher on integration with the hosting platform and scalability (fit -0.5 vs 6.1)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.117,
+        "confidence": "high",
+        "kb_id": "ses",
+        "sources": [
+          "https://aws.amazon.com/ses/pricing/"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "device connectivity (MQTT)",
+        "choice": "AWS IoT Core (MQTT) (us-east-1 N. Virginia)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan).",
+        "driven_by": [
+          "project.type",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "EMQX MQTT broker (self-hosted)",
+            "why_not": "Self-hosting another service when a managed option exists. AWS IoT Core scores higher on integration with the hosting platform and security (fit 1.9 vs 5.5)."
+          },
+          {
+            "choice": "Azure IoT Hub",
+            "why_not": "Excluded by hard constraint: cloud_preference=aws: Azure IoT Hub is a Azure service."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.533,
+        "confidence": "high",
+        "kb_id": "aws_iot",
+        "sources": [
+          "https://docs.aws.amazon.com/iot/"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 2500,
+    "max": 9400,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 1,000 users at 12 months, 20,000 peak concurrent users, ~4,000 req/s peak (scale tier: large)",
+      "Data: ~3,000 GB in the database, ~0 GB of media, ~15 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work"
+    ],
+    "breakdown": [
+      {
+        "component": "AWS ECS on Fargate (us-east-1 N. Virginia)",
+        "min": 500.0,
+        "max": 2000.0,
+        "basis": "large tier (~4,000 req/s peak, 20,000 concurrent users)"
+      },
+      {
+        "component": "Timescale Cloud (TigerData)",
+        "min": 1285.4,
+        "max": 3990.0,
+        "basis": "large tier instance; +2,980 GB storage above 20 GB"
+      },
+      {
+        "component": "Amazon ElastiCache for Valkey (us-east-1 N. Virginia)",
+        "min": 200.0,
+        "max": 800.0,
+        "basis": "large tier"
+      },
+      {
+        "component": "Django auth + django-allauth",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "1,000 MAU (within free tier)"
+      },
+      {
+        "component": "Amazon CloudFront",
+        "min": 50.0,
+        "max": 400.0,
+        "basis": "large tier"
+      },
+      {
+        "component": "GitHub Actions",
+        "min": 40.0,
+        "max": 200.0,
+        "basis": "large tier"
+      },
+      {
+        "component": "Amazon CloudWatch + X-Ray (OpenTelemetry) (us-east-1 N. Virginia)",
+        "min": 200.0,
+        "max": 800.0,
+        "basis": "large tier"
+      },
+      {
+        "component": "Amazon SES (us-east-1 N. Virginia)",
+        "min": 30.0,
+        "max": 150.0,
+        "basis": "large tier"
+      },
+      {
+        "component": "AWS IoT Core (MQTT) (us-east-1 N. Virginia)",
+        "min": 200.0,
+        "max": 1000.0,
+        "basis": "large tier"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "BUDGET_EXCEEDED",
+      "severity": "critical",
+      "message": "Estimated minimum $2,500/month exceeds budget.monthly_infra_usd=$1,500. Biggest drivers: Timescale Cloud (TigerData) (~$1,285), AWS ECS on Fargate (us-east-1 N. Virginia) (~$500). The stack shown is already the cost-optimised plan.",
+      "fields": [
+        "budget.monthly_infra_usd"
+      ]
+    },
+    {
+      "code": "DB_SINGLE_ZONE",
+      "severity": "warning",
+      "message": "To respect priorities.cost=5 the database runs as a single-zone primary with automated backups; single-zone managed SLAs are ~99.5%, below the 99.9% target. Enabling the HA standby roughly doubles the database line item.",
+      "fields": [
+        "requirements.availability",
+        "priorities.cost"
+      ]
+    }
+  ],
+  "assumptions": [
+    "No data_residency or user geography given; primary region defaults to US East (move it next to your users)",
+    "Budget re-plan: the first plan's floor (~$2,850/month) exceeded budget.monthly_infra_usd=$1,500, so the engine re-ran with cost weighted at 5 (input priorities.cost=3) and kept the cheaper plan (~$2,500/month)",
+    "RELAXED budget.monthly_infra_usd: requirements as stated need at least ~$2,500/month; raise the budget or reduce scope (fewer platforms, lower availability, defer search/realtime features)"
+  ],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "large",
+    "users_design_target": 1000,
+    "peak_concurrent_users": 20000,
+    "peak_rps_estimate": 4000,
+    "data_gb": 3000.0,
+    "db_gb": 3000.0,
+    "media_gb": 0.0,
+    "egress_gb_month": 14.6,
+    "primary_region": "us",
+    "effective_residency": "none",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": true,
+    "feature_points": 7.5,
+    "team_capacity": 40.0,
+    "effort_ratio": 0.19,
+    "background_jobs": false,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": [
+      "notifications"
+    ]
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "Vue + Vite (SPA)",
+        "score": 6.578,
+        "status": "selected",
+        "top_factors": [
+          "+2.00 team already works in typescript (team.languages)",
+          "+1.83 strong cost efficiency (5/5) with priorities.cost=5 (budget re-plan)",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "React + Vite (SPA)",
+        "score": 6.278,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in typescript (team.languages)",
+          "+1.83 strong cost efficiency (5/5) with priorities.cost=5 (budget re-plan)",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "SvelteKit",
+        "score": 6.062,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in typescript (team.languages)",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan)",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "Angular",
+        "score": 5.557,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in typescript (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan)",
+          "+0.66 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive iot",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive iot",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "Django (Python)",
+        "score": 7.867,
+        "status": "selected",
+        "top_factors": [
+          "+2.00 team already works in python (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "NestJS (Node.js LTS, TypeScript)",
+        "score": 7.717,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in typescript (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan)",
+          "+0.80 modules/DI give structure for a iot domain"
+        ]
+      },
+      {
+        "choice": "Fastify (Node.js LTS, TypeScript)",
+        "score": 6.367,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in typescript (team.languages)",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan)",
+          "+0.60 same language as the web/mobile clients: shared types and validation code",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "FastAPI (Python)",
+        "score": 6.317,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in python (team.languages)",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan)",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": 6.133,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in typescript (team.languages)",
+          "+1.83 strong cost efficiency (5/5) with priorities.cost=5 (budget re-plan)",
+          "-1.20 complex iot workflows outgrow BaaS rules and edge functions",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "ASP.NET Core (.NET 10 LTS)",
+        "score": 5.667,
+        "status": "candidate",
+        "top_factors": [
+          "-1.80 no csharp/fsharp in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Firebase (Firestore + Auth + Functions) is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Next.js full-stack (Route Handlers + Server Actions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "only applies when the web frontend is Next.js",
+        "fields": [
+          "project.platforms"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": 7.867,
+        "status": "selected",
+        "top_factors": [
+          "+2.00 time-series hypertables for device telemetry",
+          "+1.50 relational integrity and transactions for a iot domain",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan)"
+        ]
+      },
+      {
+        "choice": "PostgreSQL",
+        "score": 6.567,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a iot domain",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan)"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": 5.467,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a iot domain",
+          "+0.92 strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan)",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Amazon DynamoDB",
+        "score": 4.717,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 write-heavy load at large scale",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "SQLite (embedded) + Litestream",
+        "score": 3.833,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 single embedded file cannot serve multiple instances or HA",
+          "+1.83 strong cost efficiency (5/5) with priorities.cost=5 (budget re-plan)",
+          "+1.50 relational integrity and transactions for a iot domain",
+          "+1.10 strong performance (5/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "SQL Server (Azure SQL)",
+        "score": 3.383,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a iot domain",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "-0.92 weaker cost efficiency (2/5) with priorities.cost=5 (budget re-plan)",
+          "-0.80 SQL Server licensing outside Azure SQL's managed tiers"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Google BigQuery is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Cloud Firestore",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Cloud Firestore is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Azure Cosmos DB",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Azure Cosmos DB is a Azure service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Timescale Cloud (TigerData)",
+        "score": -3.571,
+        "status": "selected",
+        "top_factors": [
+          "-3.46 ~$600+/month at the large tier",
+          "-0.51 Timescale Cloud (TigerData) starts around $600/month against a $1,500/month total budget",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Self-managed TimescaleDB",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "AWS ECS on Fargate",
+        "score": 3.65,
+        "status": "selected",
+        "top_factors": [
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.50 runs the Django (Python) container as-is",
+          "+0.50 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "AWS Elastic Beanstalk",
+        "score": 2.783,
+        "status": "candidate",
+        "top_factors": [
+          "+0.83 strong cost efficiency (4/5) with priorities.cost=5 (budget re-plan)",
+          "+0.50 runs the Django (Python) container as-is",
+          "+0.50 strong performance (4/5) with priorities.performance=3",
+          "+0.50 strong scalability (4/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Managed Kubernetes (EKS / GKE / AKS)",
+        "score": -3.789,
+        "status": "candidate",
+        "top_factors": [
+          "-4.00 over-engineering for 1,000 users (pays off beyond ~1,000,000)",
+          "-1.05 Managed Kubernetes (EKS / GKE / AKS) starts around $1,200/month against a $1,500/month total budget",
+          "+1.00 strong performance (5/5) with priorities.performance=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "AWS Amplify Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Azure App Service",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Azure App Service is a Azure service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Azure Static Web Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Azure Static Web Apps is a Azure service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Google Cloud Run",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Google Cloud Run is a Google Cloud service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Cloudflare (Workers static assets / Pages) runs outside AWS",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      },
+      {
+        "choice": "Azure Container Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "cloud_preference=aws: Azure Container Apps is a Azure service",
+        "fields": [
+          "infrastructure.cloud_preference"
+        ]
+      }
+    ]
+  }
+}

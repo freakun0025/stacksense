@@ -1,0 +1,1328 @@
+{
+  "scenario_id": "P2",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "fa9d0bc14b88b033",
+  "status": "ok_with_warnings",
+  "summary": "Modular monolith: Django + Cloud SQL for PostgreSQL serving Next.js (web) + React Native (Expo) for Android, hosted on Google Cloud Run (asia-south1 Mumbai). Estimated $110-440/month (around the $150 budget).",
+  "architecture_style": "modular_monolith",
+  "architecture_rationale": {
+    "text": "One deployable with strict internal modules for the marketplace domain (e.g. bookings, providers, chat, payments): a 3-engineer team gets clear boundaries without distributed-system overhead; modules can be extracted later if scale demands it. Over-engineering guard: microservices rejected: 3 engineer(s), no DevOps cannot absorb the operational overhead.",
+    "driven_by": [
+      "team.size",
+      "project.type",
+      "team.has_devops"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "Next.js (web) + React Native (Expo) for Android",
+      "justification": "Web - Next.js: Chosen because team already works in javascript (team.languages); server-rendered/pre-rendered HTML for seo_critical=true; shares React/TypeScript skills and code with the React Native (Expo) app; strong time-to-market (4/5) with priorities.time_to_market=5. Mobile - React Native (Expo): Chosen because team already works in javascript (team.languages); strong time-to-market (5/5) with priorities.time_to_market=5; strong cost efficiency (4/5) with priorities.cost=4; strong maintainability (4/5) with priorities.maintainability=3.",
+      "driven_by": [
+        "team.languages",
+        "requirements.seo_critical",
+        "project.platforms",
+        "priorities.time_to_market",
+        "priorities.maintainability",
+        "project.type",
+        "priorities.cost",
+        "priorities.performance"
+      ],
+      "alternatives": [
+        {
+          "choice": "SvelteKit (web)",
+          "why_not": "Next.js scores higher on platform coverage (fit 9.0 vs 9.5)."
+        },
+        {
+          "choice": "Ionic + Capacitor for Android",
+          "why_not": "React Native scores higher on maintainability and performance (fit 6.8 vs 7.6)."
+        }
+      ],
+      "tradeoffs": [
+        "Feature set is tuned for Vercel; self-hosting needs containers or OpenNext",
+        "App Router caching model has a learning curve",
+        "Some native modules need custom development builds"
+      ],
+      "fit_score": 9.51,
+      "confidence": "low",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "Next.js",
+          "version": "Next.js 15/16",
+          "kb_id": "nextjs"
+        },
+        {
+          "platform": "android",
+          "choice": "React Native (Expo)",
+          "version": "Expo SDK (New Architecture)",
+          "kb_id": "expo_rn"
+        }
+      ],
+      "sources": [
+        "https://nextjs.org/docs",
+        "https://react.dev/",
+        "https://docs.expo.dev/",
+        "https://reactnative.dev/docs/getting-started"
+      ]
+    },
+    "backend": {
+      "choice": "Django (Python)",
+      "justification": "Chosen because team already works in python (team.languages); strong time-to-market (5/5) with priorities.time_to_market=5; strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3.",
+      "driven_by": [
+        "team.languages",
+        "priorities.time_to_market",
+        "priorities.maintainability",
+        "priorities.security",
+        "project.type",
+        "priorities.cost"
+      ],
+      "alternatives": [
+        {
+          "choice": "NestJS (Node.js LTS, TypeScript)",
+          "why_not": "Django scores higher on time-to-market and security (fit 8.3 vs 8.8)."
+        },
+        {
+          "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+          "why_not": "Complex marketplace workflows outgrow BaaS rules and edge functions; supabase.co was ISP-blocked in India in Feb 2026; needs a custom domain. Django scores higher on maintainability (fit 7.6 vs 8.8)."
+        },
+        {
+          "choice": "Firebase (Firestore + Auth + Functions)",
+          "why_not": "Excluded by hard constraint: its Authentication product has no data-location choice (infrastructure.data_residency)."
+        }
+      ],
+      "tradeoffs": [
+        "Sync-first; WebSockets need Channels/ASGI",
+        "Heavier conventions for tiny services"
+      ],
+      "fit_score": 8.817,
+      "confidence": "low",
+      "kb_id": "django",
+      "version": "Django 5.2 LTS",
+      "sources": [
+        "https://docs.djangoproject.com/",
+        "https://survey.stackoverflow.co/2025/"
+      ]
+    },
+    "database": {
+      "choice": "Cloud SQL for PostgreSQL (asia-south1 Mumbai)",
+      "justification": "Chosen because relational integrity and transactions for a marketplace domain; strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3; strong time-to-market (4/5) with priorities.time_to_market=5. Managed as Cloud SQL for PostgreSQL: same platform and private network as the application hosting; fully managed: no operations work for a team without DevOps.",
+      "driven_by": [
+        "project.type",
+        "priorities.maintainability",
+        "priorities.security",
+        "priorities.time_to_market",
+        "priorities.cost",
+        "priorities.performance",
+        "requirements.availability",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "TimescaleDB (PostgreSQL extension)",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on maintainability and security (fit 6.5 vs 7.2)."
+        },
+        {
+          "choice": "MySQL",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on maintainability and security (fit 5.7 vs 7.2)."
+        },
+        {
+          "choice": "DigitalOcean Managed PostgreSQL",
+          "why_not": "Cloud SQL for PostgreSQL scores higher on integration with the hosting platform (fit 0.2 vs 2.9)."
+        },
+        {
+          "choice": "Neon serverless Postgres",
+          "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+        }
+      ],
+      "tradeoffs": [
+        "Single-writer primary: write scale beyond one large node needs partitioning/sharding",
+        "Vacuum and connection pooling need attention at scale",
+        "~$30+/month at the small tier"
+      ],
+      "fit_score": 7.15,
+      "confidence": "low",
+      "kb_id": "postgresql",
+      "version": "PostgreSQL 17/18",
+      "sources": [
+        "https://www.postgresql.org/docs/",
+        "https://www.postgresql.org/docs/current/textsearch.html",
+        "https://postgis.net/documentation/"
+      ],
+      "engine": "PostgreSQL",
+      "offering": "Cloud SQL for PostgreSQL",
+      "offering_kb_id": "cloudsql_pg"
+    },
+    "hosting": {
+      "choice": "Google Cloud Run (asia-south1 Mumbai)",
+      "justification": "Chosen because strong cost efficiency (5/5) with priorities.cost=4; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong time-to-market (4/5) with priorities.time_to_market=5.",
+      "driven_by": [
+        "priorities.cost",
+        "priorities.scalability",
+        "priorities.security",
+        "priorities.time_to_market",
+        "priorities.maintainability",
+        "priorities.performance"
+      ],
+      "alternatives": [
+        {
+          "choice": "DigitalOcean App Platform",
+          "why_not": "Google Cloud Run scores higher on cost and scalability (fit 6.1 vs 6.6)."
+        },
+        {
+          "choice": "Azure Container Apps",
+          "why_not": "Google Cloud Run scores higher on operational simplicity and learning curve (fit 5.8 vs 6.6)."
+        },
+        {
+          "choice": "Cloudflare (Workers static assets / Pages)",
+          "why_not": "Excluded by hard constraint: cannot pin data location (infrastructure.data_residency=india)."
+        }
+      ],
+      "tradeoffs": [
+        "WebSocket connections capped by request timeout (max 60 min): clients must reconnect",
+        "Session affinity is best-effort for stateful rooms"
+      ],
+      "fit_score": 6.597,
+      "confidence": "low",
+      "kb_id": "cloud_run",
+      "sources": [
+        "https://cloud.google.com/run/docs",
+        "https://cloud.google.com/run/pricing",
+        "https://cloud.google.com/run/docs/triggering/websockets"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "cache",
+        "choice": "Memorystore for Valkey/Redis (asia-south1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3. Accepted trade-off: Memorystore for Valkey/Redis starts around $35/month against a $150/month total budget.",
+        "driven_by": [
+          "requirements.realtime",
+          "budget.monthly_infra_usd",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.maintainability"
+        ],
+        "alternatives": [
+          {
+            "choice": "DigitalOcean Managed Valkey",
+            "why_not": "Memorystore for Valkey/Redis scores higher on integration with the hosting platform and performance (fit 3.7 vs 5.2)."
+          },
+          {
+            "choice": "Amazon ElastiCache for Valkey",
+            "why_not": "Different cloud from the application hosting (fit 2.1 vs 5.2)."
+          },
+          {
+            "choice": "Upstash Redis (serverless)",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "Minimum instance cost is relatively high",
+          "Memorystore for Valkey/Redis starts around $35/month against a $150/month total budget"
+        ],
+        "fit_score": 5.152,
+        "confidence": "medium",
+        "kb_id": "memorystore",
+        "sources": [
+          "https://cloud.google.com/memorystore/docs"
+        ]
+      },
+      {
+        "layer": "queue",
+        "choice": "Google Cloud Tasks / Pub/Sub (asia-south1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong cost efficiency (5/5) with priorities.cost=4; dead-letter queues for payment webhooks and reconciliation; strong performance (5/5) with priorities.performance=3.",
+        "driven_by": [
+          "requirements.payments",
+          "requirements.file_media_storage",
+          "priorities.cost",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "Postgres-backed job queue",
+            "why_not": "Google Cloud Tasks / Pub/Sub scores higher on integration with the hosting platform and payments fit (fit 6.7 vs 7.6)."
+          },
+          {
+            "choice": "Redis-backed job queue",
+            "why_not": "Google Cloud Tasks / Pub/Sub scores higher on integration with the hosting platform and payments fit (fit 4.0 vs 7.6)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 7.587,
+        "confidence": "medium",
+        "kb_id": "cloud_tasks",
+        "sources": [
+          "https://cloud.google.com/tasks/docs",
+          "https://cloud.google.com/pubsub/docs"
+        ]
+      },
+      {
+        "layer": "search",
+        "choice": "PostgreSQL full-text search (tsvector + pg_trgm)",
+        "justification": "Chosen because Postgres FTS is enough for 15 GB at small scale; strong time-to-market (5/5) with priorities.time_to_market=5; strong cost efficiency (5/5) with priorities.cost=4; strong maintainability (5/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "requirements.full_text_search",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.security",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Meilisearch (self-hosted)",
+            "why_not": "PostgreSQL full-text search scores higher on search fit and maintainability (fit 3.5 vs 6.2)."
+          },
+          {
+            "choice": "Elastic Cloud (Elasticsearch)",
+            "why_not": "Elastic Cloud (Elasticsearch) starts around $100/month against a $150/month total budget. PostgreSQL full-text search scores higher on search fit and cost (fit 0.7 vs 6.2)."
+          },
+          {
+            "choice": "Algolia",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "Relevance tuning and faceting are basic compared with dedicated engines"
+        ],
+        "fit_score": 6.17,
+        "confidence": "high",
+        "kb_id": "pg_fts",
+        "sources": [
+          "https://www.postgresql.org/docs/current/textsearch.html"
+        ]
+      },
+      {
+        "layer": "auth",
+        "choice": "Django auth + django-allauth",
+        "justification": "Chosen because OTP verification inside the backend; no per-MAU identity fees; strong cost efficiency (5/5) with priorities.cost=4; strong time-to-market (4/5) with priorities.time_to_market=5; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon Cognito",
+            "why_not": "Amazon Cognito starts around $77/month against a $150/month total budget; different cloud from the application hosting. Django auth + django-allauth scores higher on authentication fit (fit -2.1 vs 4.2)."
+          },
+          {
+            "choice": "Firebase Authentication",
+            "why_not": "Excluded by hard constraint: cannot pin data location (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "You own password storage, rate limiting and MFA flows"
+        ],
+        "fit_score": 4.237,
+        "confidence": "high",
+        "kb_id": "framework_auth",
+        "sources": [
+          "https://www.better-auth.com/docs",
+          "https://learn.microsoft.com/aspnet/core/",
+          "https://spring.io/projects/spring-boot"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "SMS OTP delivery",
+        "choice": "MSG91 OTP (DLT-registered)",
+        "justification": "Chosen because Indian DLT-registered SMS route; phone numbers processed in India; strong time-to-market (5/5) with priorities.time_to_market=5; strong cost efficiency (5/5) with priorities.cost=4; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "requirements.auth",
+          "infrastructure.data_residency",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Communication Services SMS",
+            "why_not": "Different cloud from the application hosting. MSG91 OTP scores higher on data residency and cost (fit 1.0 vs 5.8)."
+          },
+          {
+            "choice": "Amazon SNS / End User Messaging SMS",
+            "why_not": "Different cloud from the application hosting. MSG91 OTP scores higher on data residency and time-to-market (fit 0.9 vs 5.8)."
+          },
+          {
+            "choice": "Twilio Verify",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "India-focused"
+        ],
+        "fit_score": 5.82,
+        "confidence": "high",
+        "kb_id": "msg91",
+        "sources": [
+          "https://msg91.com/",
+          "https://www.trai.gov.in/"
+        ]
+      },
+      {
+        "layer": "storage",
+        "choice": "Google Cloud Storage (asia-south1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong maintainability (5/5) with priorities.maintainability=3; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.cost"
+        ],
+        "alternatives": [
+          {
+            "choice": "DigitalOcean Spaces",
+            "why_not": "Google Cloud Storage scores higher on integration with the hosting platform and maintainability (fit 3.8 vs 6.7)."
+          },
+          {
+            "choice": "Azure Blob Storage",
+            "why_not": "Different cloud from the application hosting (fit 2.2 vs 6.7)."
+          },
+          {
+            "choice": "Cloudflare R2",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.67,
+        "confidence": "high",
+        "kb_id": "gcs",
+        "sources": [
+          "https://cloud.google.com/storage/pricing"
+        ]
+      },
+      {
+        "layer": "cdn",
+        "choice": "Google Cloud CDN",
+        "justification": "Chosen because same cloud/platform and region as the application; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3.",
+        "driven_by": [
+          "requirements.seo_critical",
+          "requirements.file_media_storage",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.cost"
+        ],
+        "alternatives": [
+          {
+            "choice": "Cloudflare CDN (free/pro plan)",
+            "why_not": "Google Cloud CDN scores higher on integration with the hosting platform (fit 5.7 vs 6.3)."
+          },
+          {
+            "choice": "Amazon CloudFront",
+            "why_not": "Different cloud from the application hosting (fit 2.3 vs 6.3)."
+          }
+        ],
+        "tradeoffs": [
+          "Cache only public, non-personal assets at the edge"
+        ],
+        "fit_score": 6.32,
+        "confidence": "low",
+        "kb_id": "cloud_cdn",
+        "sources": [
+          "https://cloud.google.com/cdn/docs"
+        ]
+      },
+      {
+        "layer": "realtime",
+        "choice": "Django Channels (ASGI) + Redis/Valkey pub/sub backplane",
+        "justification": "Chosen because messages stay inside your own backend and region; strong cost efficiency (5/5) with priorities.cost=4; strong time-to-market (4/5) with priorities.time_to_market=5; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "requirements.realtime",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Pusher Channels",
+            "why_not": "Pusher Channels starts around $49/month against a $150/month total budget. Django Channels scores higher on realtime support and cost (fit 1.8 vs 5.2)."
+          },
+          {
+            "choice": "Ably",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "Multi-instance fan-out needs a pub/sub backplane (Redis/Valkey)"
+        ],
+        "fit_score": 5.237,
+        "confidence": "high",
+        "kb_id": "ws_native",
+        "sources": [
+          "https://socket.io/docs/v4/",
+          "https://learn.microsoft.com/aspnet/core/signalr/introduction",
+          "https://hexdocs.pm/phoenix/overview.html"
+        ]
+      },
+      {
+        "layer": "payments",
+        "choice": "Razorpay",
+        "justification": "Chosen because RBI-authorised Indian gateway: UPI, cards and netbanking; strong time-to-market (5/5) with priorities.time_to_market=5; payouts/disbursals to providers or borrowers; strong security (5/5) with priorities.security=3.",
+        "driven_by": [
+          "requirements.payments",
+          "infrastructure.data_residency",
+          "priorities.time_to_market",
+          "project.description",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Cashfree Payments",
+            "why_not": "A close runner-up with a slightly weaker overall fit (fit 6.5 vs 6.5)."
+          },
+          {
+            "choice": "PayU India",
+            "why_not": "Razorpay scores higher on fit for the described use case and time-to-market (fit 5.1 vs 6.5)."
+          },
+          {
+            "choice": "Stripe (Payments + Billing)",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "India-centric"
+        ],
+        "fit_score": 6.503,
+        "confidence": "low",
+        "kb_id": "razorpay",
+        "sources": [
+          "https://razorpay.com/docs/",
+          "https://razorpay.com/security/",
+          "https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=11244"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "GitHub Actions",
+        "justification": "Chosen because strong time-to-market (5/5) with priorities.time_to_market=5; strong cost efficiency (5/5) with priorities.cost=4; free minutes, large action marketplace, works with any cloud; strong maintainability (5/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "team.has_devops",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.performance",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Pipelines",
+            "why_not": "Different cloud from the application hosting. GitHub Actions scores higher on time-to-market and cost (fit 1.5 vs 5.3)."
+          },
+          {
+            "choice": "GitLab CI (self-managed)",
+            "why_not": "Self-hosting CI is unnecessary; needs ongoing operations work but team.has_devops=false (ops burden 3/5). GitHub Actions scores higher on time-to-market (fit 0.6 vs 5.3)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.32,
+        "confidence": "high",
+        "kb_id": "github_actions",
+        "sources": [
+          "https://docs.github.com/actions"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "purpose": "mobile build and release",
+        "choice": "Expo EAS Build/Submit/Update",
+        "justification": "Chosen because native build pipeline for React Native (Expo); strong time-to-market (5/5) with priorities.time_to_market=5; strong cost efficiency (4/5) with priorities.cost=4; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "project.platforms",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Codemagic",
+            "why_not": "Expo EAS Build/Submit/Update scores higher on integration with the frontend (fit 3.4 vs 6.4)."
+          },
+          {
+            "choice": "fastlane on GitHub Actions",
+            "why_not": "Expo EAS Build/Submit/Update scores higher on integration with the frontend and time-to-market (fit 3.2 vs 6.4)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.353,
+        "confidence": "high",
+        "kb_id": "eas",
+        "sources": [
+          "https://docs.expo.dev/build/introduction/"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Google Cloud Logging + Monitoring (asia-south1 Mumbai)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong time-to-market (5/5) with priorities.time_to_market=5; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3.",
+        "driven_by": [
+          "requirements.availability",
+          "priorities.time_to_market",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Monitor Application Insights",
+            "why_not": "Different cloud from the application hosting (fit 2.1 vs 6.6)."
+          },
+          {
+            "choice": "Amazon CloudWatch + X-Ray (OpenTelemetry)",
+            "why_not": "Different cloud from the application hosting. Google Cloud Logging + Monitoring scores higher on time-to-market (fit 1.5 vs 6.6)."
+          },
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Excluded by hard constraint: no India region (infrastructure.data_residency=india)."
+          }
+        ],
+        "tradeoffs": [
+          "CERT-In requires ICT logs to be retained for 180 days within India"
+        ],
+        "fit_score": 6.553,
+        "confidence": "high",
+        "kb_id": "gcp_ops",
+        "sources": [
+          "https://cloud.google.com/stackdriver/docs"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "push notifications",
+        "choice": "Firebase Cloud Messaging (push)",
+        "justification": "Chosen because same cloud/platform and region as the application; strong time-to-market (5/5) with priorities.time_to_market=5; strong cost efficiency (5/5) with priorities.cost=4; strong scalability (5/5) with priorities.scalability=3.",
+        "driven_by": [
+          "project.platforms",
+          "requirements.realtime",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.scalability",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [],
+        "tradeoffs": [
+          "Keep payloads free of personal data (delivery is global)"
+        ],
+        "fit_score": 6.67,
+        "confidence": "high",
+        "kb_id": "fcm",
+        "sources": [
+          "https://firebase.google.com/docs/cloud-messaging"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 110,
+    "max": 440,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 30,000 users at 12 months, 800 peak concurrent users, ~120 req/s peak (scale tier: small)",
+      "Data: ~15 GB in the database, ~35 GB of media, ~879 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work",
+      "Razorpay charges per transaction (typically ~2% domestic); not counted as infrastructure"
+    ],
+    "breakdown": [
+      {
+        "component": "Google Cloud Run (asia-south1 Mumbai)",
+        "min": 5.0,
+        "max": 40.0,
+        "basis": "small tier (~120 req/s peak, 800 concurrent users)"
+      },
+      {
+        "component": "Cloud SQL for PostgreSQL",
+        "min": 30.0,
+        "max": 90.0,
+        "basis": "small tier instance"
+      },
+      {
+        "component": "Memorystore for Valkey/Redis (asia-south1 Mumbai)",
+        "min": 35.0,
+        "max": 80.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Google Cloud Tasks / Pub/Sub (asia-south1 Mumbai)",
+        "min": 0.0,
+        "max": 5.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Django auth + django-allauth",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "30,000 MAU (within free tier)"
+      },
+      {
+        "component": "MSG91 OTP (DLT-registered)",
+        "min": 22.5,
+        "max": 120.0,
+        "basis": "0.3-1 OTP per user per month x 30,000 users at $0.0025-0.004 per SMS"
+      },
+      {
+        "component": "Google Cloud Storage (asia-south1 Mumbai)",
+        "min": 13.36,
+        "max": 19.79,
+        "basis": "35 GB stored, ~158 GB/month served"
+      },
+      {
+        "component": "Google Cloud CDN",
+        "min": 5.0,
+        "max": 20.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "GitHub Actions",
+        "min": 0.0,
+        "max": 10.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Expo EAS Build/Submit/Update",
+        "min": 0.0,
+        "max": 19.0,
+        "basis": "small tier"
+      },
+      {
+        "component": "Google Cloud Logging + Monitoring (asia-south1 Mumbai)",
+        "min": 0.0,
+        "max": 30.0,
+        "basis": "small tier"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "DB_SINGLE_ZONE",
+      "severity": "warning",
+      "message": "To respect priorities.cost=4 the database runs as a single-zone primary with automated backups; single-zone managed SLAs are ~99.5%, below the 99.9% target. Enabling the HA standby roughly doubles the database line item.",
+      "fields": [
+        "requirements.availability",
+        "priorities.cost"
+      ]
+    },
+    {
+      "code": "BUDGET_HEADROOM",
+      "severity": "info",
+      "message": "Expected $110-440/month: the upper end exceeds the $150 budget at peak usage. Set billing alerts.",
+      "fields": [
+        "budget.monthly_infra_usd"
+      ]
+    },
+    {
+      "code": "CERT_IN_LOGS",
+      "severity": "info",
+      "message": "CERT-In Directions (2022): keep ICT system logs for 180 days within Indian jurisdiction.",
+      "fields": [
+        "infrastructure.data_residency"
+      ]
+    },
+    {
+      "code": "DPDP_OBLIGATIONS",
+      "severity": "info",
+      "message": "DPDP Act 2023: consent notices, purpose limitation, breach intimation to the Data Protection Board and erasure on request. India residency is enforced because data_residency=india.",
+      "fields": [
+        "compliance"
+      ]
+    }
+  ],
+  "assumptions": [],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "small",
+    "users_design_target": 30000,
+    "peak_concurrent_users": 800,
+    "peak_rps_estimate": 120,
+    "data_gb": 50.0,
+    "db_gb": 15.0,
+    "media_gb": 35.0,
+    "egress_gb_month": 878.9,
+    "primary_region": "india",
+    "effective_residency": "india",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": true,
+    "feature_points": 15.5,
+    "team_capacity": 24.0,
+    "effort_ratio": 0.65,
+    "background_jobs": true,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": [
+      "chat",
+      "multi_city"
+    ]
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "Next.js",
+        "score": 9.51,
+        "status": "selected",
+        "top_factors": [
+          "+2.40 team already works in javascript (team.languages)",
+          "+1.60 server-rendered/pre-rendered HTML for seo_critical=true",
+          "+1.00 shares React/TypeScript skills and code with the React Native (Expo) app",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "SvelteKit",
+        "score": 9.045,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in javascript (team.languages)",
+          "+1.60 server-rendered/pre-rendered HTML for seo_critical=true",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "Nuxt",
+        "score": 8.495,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in javascript (team.languages)",
+          "+1.60 server-rendered/pre-rendered HTML for seo_critical=true",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.80 rich client-side interactivity for a marketplace"
+        ]
+      },
+      {
+        "choice": "Angular",
+        "score": 8.173,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.60 server-rendered/pre-rendered HTML for seo_critical=true",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.80 rich client-side interactivity for a marketplace"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive marketplace",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive marketplace",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "React Native (Expo)",
+        "score": 7.562,
+        "status": "selected",
+        "top_factors": [
+          "+2.40 team already works in javascript (team.languages)",
+          "+1.83 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "+0.73 strong cost efficiency (4/5) with priorities.cost=4",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "Ionic + Capacitor",
+        "score": 6.85,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in javascript (team.languages)",
+          "+1.83 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "+1.47 strong cost efficiency (5/5) with priorities.cost=4",
+          "+0.60 gentle learning curve suits a intermediate team on a 8-week timeline"
+        ]
+      },
+      {
+        "choice": "Progressive Web App",
+        "score": 6.85,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in javascript (team.languages)",
+          "+1.83 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "+1.47 strong cost efficiency (5/5) with priorities.cost=4",
+          "+0.60 gentle learning curve suits a intermediate team on a 8-week timeline"
+        ]
+      },
+      {
+        "choice": "Flutter",
+        "score": 2.335,
+        "status": "candidate",
+        "top_factors": [
+          "-2.16 no dart in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.73 strong cost efficiency (4/5) with priorities.cost=4"
+        ]
+      },
+      {
+        "choice": "Swift + SwiftUI (native iOS)",
+        "score": null,
+        "status": "excluded",
+        "reason": "does not target android (project.platforms)",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Unity",
+        "score": null,
+        "status": "excluded",
+        "reason": "game engine: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Godot",
+        "score": null,
+        "status": "excluded",
+        "reason": "game engine: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "Django (Python)",
+        "score": 8.817,
+        "status": "selected",
+        "top_factors": [
+          "+2.40 team already works in python (team.languages)",
+          "+1.83 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "NestJS (Node.js LTS, TypeScript)",
+        "score": 8.3,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in javascript (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.80 modules/DI give structure for a marketplace domain"
+        ]
+      },
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": 7.6,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in javascript (team.languages)",
+          "+1.83 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "+1.47 strong cost efficiency (5/5) with priorities.cost=4",
+          "-1.20 complex marketplace workflows outgrow BaaS rules and edge functions"
+        ]
+      },
+      {
+        "choice": "Fastify (Node.js LTS, TypeScript)",
+        "score": 6.95,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in javascript (team.languages)",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.73 strong cost efficiency (4/5) with priorities.cost=4",
+          "+0.60 same language as the web/mobile clients: shared types and validation code"
+        ]
+      },
+      {
+        "choice": "FastAPI (Python)",
+        "score": 6.9,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in python (team.languages)",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.73 strong cost efficiency (4/5) with priorities.cost=4",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "Express (Node.js LTS)",
+        "score": 5.75,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in javascript (team.languages)",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.73 strong cost efficiency (4/5) with priorities.cost=4",
+          "+0.60 gentle learning curve suits a intermediate team on a 8-week timeline"
+        ]
+      },
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "its Authentication product has no data-location choice (infrastructure.data_residency)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Appwrite",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "PostgreSQL",
+        "score": 7.15,
+        "status": "selected",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a marketplace domain",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": 6.45,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a marketplace domain",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.73 strong cost efficiency (4/5) with priorities.cost=4"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": 5.65,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a marketplace domain",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.73 strong cost efficiency (4/5) with priorities.cost=4",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "SQL Server (Azure SQL)",
+        "score": 3.933,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a marketplace domain",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+0.92 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "-0.80 SQL Server licensing outside Azure SQL's managed tiers"
+        ]
+      },
+      {
+        "choice": "MongoDB",
+        "score": 3.583,
+        "status": "candidate",
+        "top_factors": [
+          "+1.83 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "-1.00 money/relational data needs multi-row ACID guarantees",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Amazon DynamoDB",
+        "score": 2.733,
+        "status": "candidate",
+        "top_factors": [
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "-1.00 money/relational data needs multi-row ACID guarantees"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Cloud SQL for PostgreSQL",
+        "score": 2.867,
+        "status": "selected",
+        "top_factors": [
+          "+3.00 same platform and private network as the application hosting",
+          "-0.93 ~$30+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "DigitalOcean Managed PostgreSQL",
+        "score": 0.183,
+        "status": "candidate",
+        "top_factors": [
+          "-0.62 ~$15+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Supabase Postgres",
+        "score": -0.443,
+        "status": "candidate",
+        "top_factors": [
+          "-0.84 ~$25+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "Azure Database for PostgreSQL (Flexible Server)",
+        "score": -2.133,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 different cloud from the application: cross-cloud latency and egress",
+          "-0.93 ~$30+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Amazon RDS for PostgreSQL",
+        "score": -2.133,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 different cloud from the application: cross-cloud latency and egress",
+          "-0.93 ~$30+/month at the small tier",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      },
+      {
+        "choice": "Amazon Aurora PostgreSQL",
+        "score": -4.539,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 different cloud from the application: cross-cloud latency and egress",
+          "-1.73 ~$120+/month at the small tier",
+          "-1.61 Amazon Aurora PostgreSQL starts around $120/month against a $150/month total budget",
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      },
+      {
+        "choice": "Neon serverless Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Railway Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Render Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Self-managed PostgreSQL (Patroni/pgBackRest)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "Google Cloud Run",
+        "score": 6.597,
+        "status": "selected",
+        "top_factors": [
+          "+1.33 strong cost efficiency (5/5) with priorities.cost=4",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.83 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "DigitalOcean App Platform",
+        "score": 6.063,
+        "status": "candidate",
+        "top_factors": [
+          "+1.67 strong time-to-market (5/5) with priorities.time_to_market=5",
+          "+0.67 strong cost efficiency (4/5) with priorities.cost=4",
+          "+0.60 gentle learning curve suits a intermediate team on a 8-week timeline",
+          "+0.50 runs the Django (Python) container as-is"
+        ]
+      },
+      {
+        "choice": "Azure Container Apps",
+        "score": 5.817,
+        "status": "candidate",
+        "top_factors": [
+          "+1.33 strong cost efficiency (5/5) with priorities.cost=4",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.83 strong time-to-market (4/5) with priorities.time_to_market=5"
+        ]
+      },
+      {
+        "choice": "Azure App Service",
+        "score": 4.763,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.83 strong time-to-market (4/5) with priorities.time_to_market=5",
+          "+0.50 runs the Django (Python) container as-is",
+          "+0.50 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "AWS Elastic Beanstalk",
+        "score": 2.617,
+        "status": "candidate",
+        "top_factors": [
+          "+0.67 strong cost efficiency (4/5) with priorities.cost=4",
+          "+0.50 runs the Django (Python) container as-is",
+          "+0.50 strong performance (4/5) with priorities.performance=3",
+          "+0.50 strong scalability (4/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "AWS ECS on Fargate",
+        "score": 2.57,
+        "status": "candidate",
+        "top_factors": [
+          "-1.08 needs ongoing operations work but team.has_devops=false (ops burden 3/5)",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "+1.00 strong security (5/5) with priorities.security=3",
+          "+0.50 runs the Django (Python) container as-is"
+        ]
+      },
+      {
+        "choice": "AWS Amplify Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Azure Static Web Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot pin data location (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Firebase Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "cannot run a long-lived Django (Python) server process",
+        "fields": [
+          "backend"
+        ]
+      },
+      {
+        "choice": "Fly.io",
+        "score": null,
+        "status": "excluded",
+        "reason": "no India region (infrastructure.data_residency=india)",
+        "fields": [
+          "infrastructure.data_residency"
+        ]
+      },
+      {
+        "choice": "Amazon GameLift Servers",
+        "score": null,
+        "status": "excluded",
+        "reason": "dedicated game-server fleets: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ]
+  }
+}

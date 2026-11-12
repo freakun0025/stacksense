@@ -1,0 +1,1120 @@
+{
+  "scenario_id": "E05",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "73728ba26a878832",
+  "status": "ok_with_warnings",
+  "summary": "Serverless/BaaS architecture: Firebase serving React + Vite (SPA) (web) + React Native (Expo) for Android + iOS + Tauri (desktop), hosted on Cloudflare (Workers static assets / Pages). Estimated $0-2/month (within the $200 budget).",
+  "architecture_style": "serverless",
+  "architecture_rationale": {
+    "text": "Firebase provides data, auth and APIs as managed services; custom logic runs as functions, so there is no server fleet to operate. Over-engineering guard: microservices rejected: 2 engineer(s), no DevOps cannot absorb the operational overhead.",
+    "driven_by": [
+      "team.size",
+      "team.has_devops",
+      "priorities.time_to_market"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "React + Vite (SPA) (web) + React Native (Expo) for Android + iOS + Tauri (desktop)",
+      "justification": "Web - React + Vite (SPA): Chosen because team already works in typescript (team.languages); strong cost efficiency (5/5) with priorities.cost=3; shares React/TypeScript skills and code with the React Native (Expo) app; rich client-side interactivity for a web_app. Mobile - React Native (Expo): Chosen because team already works in typescript (team.languages); one codebase ships both Android and iOS (project.platforms); strong time-to-market (5/5) with priorities.time_to_market=3; on-device SQLite storage and background sync for offline_support=true. Desktop - Tauri: Chosen because team already works in typescript (team.languages); strong cost efficiency (5/5) with priorities.cost=3; strong performance (5/5) with priorities.performance=3; reuses the React + Vite (SPA) web UI code on the desktop.",
+      "driven_by": [
+        "team.languages",
+        "priorities.cost",
+        "project.platforms",
+        "priorities.maintainability",
+        "project.type",
+        "priorities.performance",
+        "priorities.time_to_market",
+        "requirements.offline_support"
+      ],
+      "alternatives": [
+        {
+          "choice": "Vue + Vite (SPA) (web)",
+          "why_not": "React + Vite scores higher on platform coverage (fit 8.1 vs 8.6)."
+        },
+        {
+          "choice": "Ionic + Capacitor for Android + iOS",
+          "why_not": "WebView storage is a weaker base for offline-first data. React Native scores higher on maintainability and performance (fit 7.0 vs 9.2)."
+        },
+        {
+          "choice": "Electron (desktop)",
+          "why_not": "Tauri scores higher on performance and cost (fit 7.2 vs 8.8)."
+        }
+      ],
+      "tradeoffs": [
+        "Routing/data fetching choices left to the team",
+        "Some native modules need custom development builds",
+        "Native logic needs Rust",
+        "WebView rendering differs per OS"
+      ],
+      "fit_score": 8.645,
+      "confidence": "low",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "React + Vite (SPA)",
+          "version": "React 19 + Vite",
+          "kb_id": "react_vite"
+        },
+        {
+          "platform": "android + ios",
+          "choice": "React Native (Expo)",
+          "version": "Expo SDK (New Architecture)",
+          "kb_id": "expo_rn"
+        },
+        {
+          "platform": "desktop",
+          "choice": "Tauri",
+          "version": "Tauri 2",
+          "kb_id": "tauri"
+        }
+      ],
+      "sources": [
+        "https://react.dev/",
+        "https://vite.dev/guide/",
+        "https://docs.expo.dev/",
+        "https://reactnative.dev/docs/getting-started",
+        "https://v2.tauri.app/"
+      ]
+    },
+    "backend": {
+      "choice": "Firebase (Firestore + Auth + Functions)",
+      "justification": "Chosen because team already works in typescript (team.languages); BaaS covers auth, data and storage without writing server code; SDK-level offline persistence and sync; strong scalability (5/5) with priorities.scalability=3. Accepted trade-off: high vendor lock-in (proprietary APIs/data model) with lock-in tolerance 'medium'.",
+      "driven_by": [
+        "team.languages",
+        "project.type",
+        "requirements.offline_support",
+        "priorities.scalability",
+        "priorities.time_to_market",
+        "team.experience"
+      ],
+      "alternatives": [
+        {
+          "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+          "why_not": "Firebase scores higher on offline support and performance (fit 8.8 vs 10.8)."
+        },
+        {
+          "choice": "Appwrite",
+          "why_not": "Firebase scores higher on offline support and scalability (fit 7.3 vs 10.8)."
+        }
+      ],
+      "tradeoffs": [
+        "Proprietary data model and APIs (high lock-in)",
+        "Firebase Authentication offers no data-location choice",
+        "Weak at relational queries and reporting",
+        "High vendor lock-in (proprietary APIs/data model) with lock-in tolerance 'medium'"
+      ],
+      "fit_score": 10.75,
+      "confidence": "medium",
+      "kb_id": "firebase",
+      "sources": [
+        "https://firebase.google.com/docs",
+        "https://firebase.google.com/docs/projects/locations",
+        "https://firebase.google.com/pricing"
+      ]
+    },
+    "database": {
+      "choice": "Cloud Firestore (us-central1 Iowa)",
+      "justification": "Chosen because Firebase is built on Cloud Firestore; strong scalability (5/5) with priorities.scalability=3; strong time-to-market (5/5) with priorities.time_to_market=3; client SDKs sync offline writes. Accepted trade-off: money/relational data needs multi-row ACID guarantees. Managed as Cloud Firestore: fully managed: no operations work for a team without DevOps; managed failover/standby available.",
+      "driven_by": [
+        "priorities.scalability",
+        "priorities.time_to_market",
+        "project.type",
+        "infrastructure.vendor_lock_in_tolerance",
+        "requirements.offline_support",
+        "priorities.cost",
+        "requirements.availability",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "PostgreSQL",
+          "why_not": "Would bypass the Firebase data model. Cloud Firestore scores higher on offline support and scalability (fit 0.2 vs 9.4)."
+        },
+        {
+          "choice": "TimescaleDB (PostgreSQL extension)",
+          "why_not": "Would bypass the Firebase data model. Cloud Firestore scores higher on offline support and scalability (fit -0.5 vs 9.4)."
+        }
+      ],
+      "tradeoffs": [
+        "Limited querying/joins; reporting needs exports",
+        "Proprietary (high lock-in)",
+        "Money/relational data needs multi-row ACID guarantees",
+        "High vendor lock-in (proprietary APIs/data model) with lock-in tolerance 'medium'",
+        "Adds a hyperscaler account next to cloudflare hosting"
+      ],
+      "fit_score": 9.45,
+      "confidence": "high",
+      "kb_id": "firestore",
+      "sources": [
+        "https://firebase.google.com/docs/firestore",
+        "https://firebase.google.com/docs/firestore/manage-data/enable-offline"
+      ],
+      "engine": "Cloud Firestore",
+      "offering": "Cloud Firestore",
+      "offering_kb_id": "firestore_off"
+    },
+    "hosting": {
+      "choice": "Cloudflare (Workers static assets / Pages)",
+      "justification": "Chosen because serves the web frontend; the BaaS handles data and auth; strong cost efficiency (5/5) with priorities.cost=3; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3.",
+      "driven_by": [
+        "priorities.cost",
+        "priorities.performance",
+        "priorities.scalability",
+        "priorities.maintainability",
+        "priorities.security",
+        "priorities.time_to_market"
+      ],
+      "alternatives": [
+        {
+          "choice": "Vercel",
+          "why_not": "Cloudflare scores higher on cost (fit 6.6 vs 6.6)."
+        },
+        {
+          "choice": "DigitalOcean App Platform",
+          "why_not": "Cloudflare scores higher on cost and performance (fit 6.1 vs 6.6)."
+        },
+        {
+          "choice": "On-premise Kubernetes (RKE2 / k3s)",
+          "why_not": "Excluded by hard constraint: deployment_model=managed_cloud is not on-premise."
+        }
+      ],
+      "tradeoffs": [
+        "Cloudflare now steers new projects from Pages to Workers static assets"
+      ],
+      "fit_score": 6.63,
+      "confidence": "low",
+      "kb_id": "cloudflare",
+      "sources": [
+        "https://developers.cloudflare.com/workers/static-assets/",
+        "https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/",
+        "https://developers.cloudflare.com/workers/platform/pricing/"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "queue",
+        "choice": "Google Cloud Tasks / Pub/Sub (us-central1 Iowa)",
+        "justification": "Chosen because strong cost efficiency (5/5) with priorities.cost=3; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3. Accepted trade-off: adds a separate hyperscaler account next to the cloudflare platform.",
+        "driven_by": [
+          "requirements.payments",
+          "requirements.offline_support",
+          "priorities.cost",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.maintainability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon SQS (+ EventBridge Scheduler)",
+            "why_not": "A close runner-up with a slightly weaker overall fit (fit 2.3 vs 2.3)."
+          },
+          {
+            "choice": "Azure Service Bus",
+            "why_not": "Google Cloud Tasks / Pub/Sub scores higher on cost (fit 2.0 vs 2.3)."
+          }
+        ],
+        "tradeoffs": [
+          "Adds a separate hyperscaler account next to the cloudflare platform"
+        ],
+        "fit_score": 2.32,
+        "confidence": "low",
+        "kb_id": "cloud_tasks",
+        "sources": [
+          "https://cloud.google.com/tasks/docs",
+          "https://cloud.google.com/pubsub/docs"
+        ]
+      },
+      {
+        "layer": "auth",
+        "choice": "Firebase Authentication",
+        "justification": "Chosen because auth built into the chosen BaaS; strong cost efficiency (5/5) with priorities.cost=3; strong scalability (5/5) with priorities.scalability=3; strong time-to-market (5/5) with priorities.time_to_market=3. Accepted trade-off: adds a separate hyperscaler account next to the cloudflare platform.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.cost",
+          "priorities.scalability",
+          "priorities.time_to_market",
+          "infrastructure.vendor_lock_in_tolerance",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "WorkOS (AuthKit + SSO)",
+            "why_not": "Firebase Authentication scores higher on integration with the backend and cost (fit 2.8 vs 3.4)."
+          },
+          {
+            "choice": "Auth0 (Okta)",
+            "why_not": "Weaker cost efficiency (2/5) with priorities.cost=3. Firebase Authentication scores higher on integration with the backend (fit 2.6 vs 3.4)."
+          }
+        ],
+        "tradeoffs": [
+          "No choice of data location for identity data",
+          "Adds a separate hyperscaler account next to the cloudflare platform",
+          "High vendor lock-in (proprietary APIs/data model) with lock-in tolerance 'medium'"
+        ],
+        "fit_score": 3.37,
+        "confidence": "low",
+        "kb_id": "firebase_auth",
+        "sources": [
+          "https://firebase.google.com/docs/projects/locations"
+        ]
+      },
+      {
+        "layer": "realtime",
+        "choice": "Firestore realtime listeners (us-central1 Iowa)",
+        "justification": "Chosen because built into the BaaS already in the stack; strong scalability (5/5) with priorities.scalability=3; strong time-to-market (5/5) with priorities.time_to_market=3; strong cost efficiency (4/5) with priorities.cost=3. Accepted trade-off: adds a separate hyperscaler account next to the cloudflare platform.",
+        "driven_by": [
+          "requirements.realtime",
+          "priorities.scalability",
+          "priorities.time_to_market",
+          "infrastructure.vendor_lock_in_tolerance",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Ably",
+            "why_not": "Firestore realtime listeners scores higher on integration with the backend and cost (fit 3.9 vs 4.0)."
+          },
+          {
+            "choice": "Pusher Channels",
+            "why_not": "Firestore realtime listeners scores higher on integration with the backend and cost (fit 2.8 vs 4.0)."
+          }
+        ],
+        "tradeoffs": [
+          "Adds a separate hyperscaler account next to the cloudflare platform",
+          "High vendor lock-in (proprietary APIs/data model) with lock-in tolerance 'medium'"
+        ],
+        "fit_score": 4.02,
+        "confidence": "low",
+        "kb_id": "firestore_rt",
+        "sources": [
+          "https://firebase.google.com/docs/firestore"
+        ]
+      },
+      {
+        "layer": "payments",
+        "choice": "Stripe (Payments + Billing)",
+        "justification": "Chosen because global card/wallet coverage; strong maintainability (5/5) with priorities.maintainability=3; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3.",
+        "driven_by": [
+          "requirements.payments",
+          "priorities.maintainability",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.time_to_market",
+          "priorities.cost"
+        ],
+        "alternatives": [
+          {
+            "choice": "Paddle (merchant of record)",
+            "why_not": "Stripe scores higher on cost and maintainability (fit 3.6 vs 4.6)."
+          },
+          {
+            "choice": "Razorpay",
+            "why_not": "Stripe scores higher on payments fit and maintainability (fit 3.1 vs 4.6)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 4.62,
+        "confidence": "medium",
+        "kb_id": "stripe",
+        "sources": [
+          "https://docs.stripe.com/",
+          "https://docs.stripe.com/billing",
+          "https://stripe.com/in"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "Git-push deploys on Cloudflare",
+        "justification": "Chosen because Git push deploys with previews are built into the hosting; strong cost efficiency (5/5) with priorities.cost=3; strong time-to-market (5/5) with priorities.time_to_market=3; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "team.has_devops",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "GitHub Actions",
+            "why_not": "Git-push deploys on Cloudflare scores higher on integration with the hosting platform (fit 4.6 vs 5.6)."
+          },
+          {
+            "choice": "Azure Pipelines",
+            "why_not": "Git-push deploys on Cloudflare scores higher on integration with the hosting platform and cost (fit 3.1 vs 5.6)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.62,
+        "confidence": "medium",
+        "kb_id": "host_git_deploy",
+        "sources": [
+          "https://vercel.com/docs",
+          "https://docs.netlify.com/",
+          "https://developers.cloudflare.com/workers/static-assets/"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "purpose": "mobile build and release",
+        "choice": "Expo EAS Build/Submit/Update",
+        "justification": "Chosen because native build pipeline for React Native (Expo); strong time-to-market (5/5) with priorities.time_to_market=3; strong cost efficiency (4/5) with priorities.cost=3; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "project.platforms",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Codemagic",
+            "why_not": "Expo EAS Build/Submit/Update scores higher on integration with the frontend (fit 2.8 vs 5.8)."
+          },
+          {
+            "choice": "fastlane on GitHub Actions",
+            "why_not": "Expo EAS Build/Submit/Update scores higher on integration with the frontend and time-to-market (fit 2.8 vs 5.8)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 5.77,
+        "confidence": "high",
+        "kb_id": "eas",
+        "sources": [
+          "https://docs.expo.dev/build/introduction/"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Cloudflare analytics/logs",
+        "justification": "Chosen because the platform's built-in logs, metrics and log drains cover a small team; strong cost efficiency (5/5) with priorities.cost=3; strong time-to-market (5/5) with priorities.time_to_market=3; fully managed: no operations work for a team without DevOps.",
+        "driven_by": [
+          "requirements.availability",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Cloudflare analytics/logs scores higher on integration with the hosting platform and cost (fit 3.6 vs 3.7)."
+          },
+          {
+            "choice": "Prometheus + Grafana + Loki (self-hosted)",
+            "why_not": "Needs ongoing operations work but team.has_devops=false (ops burden 3/5); self-hosting another service when a managed option exists. Cloudflare analytics/logs scores higher on integration with the hosting platform (fit 0.9 vs 3.7)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 3.72,
+        "confidence": "low",
+        "kb_id": "host_logs",
+        "sources": [
+          "https://vercel.com/docs",
+          "https://docs.netlify.com/",
+          "https://developers.cloudflare.com/workers/static-assets/"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "push notifications",
+        "choice": "Firebase Cloud Messaging (push)",
+        "justification": "Chosen because strong cost efficiency (5/5) with priorities.cost=3; strong scalability (5/5) with priorities.scalability=3; strong time-to-market (5/5) with priorities.time_to_market=3; strong maintainability (4/5) with priorities.maintainability=3.",
+        "driven_by": [
+          "project.platforms",
+          "requirements.realtime",
+          "priorities.cost",
+          "priorities.scalability",
+          "priorities.time_to_market",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [],
+        "tradeoffs": [
+          "Keep payloads free of personal data (delivery is global)"
+        ],
+        "fit_score": 3.47,
+        "confidence": "high",
+        "kb_id": "fcm",
+        "sources": [
+          "https://firebase.google.com/docs/cloud-messaging"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "transactional notifications",
+        "choice": "Resend",
+        "justification": "Chosen because strong time-to-market (5/5) with priorities.time_to_market=3; strong cost efficiency (4/5) with priorities.cost=3; strong maintainability (4/5) with priorities.maintainability=3; strong performance (4/5) with priorities.performance=3.",
+        "driven_by": [
+          "requirements.auth",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon SES",
+            "why_not": "Adds a separate hyperscaler account next to the cloudflare platform. Resend scores higher on time-to-market (fit 2.0 vs 2.8)."
+          },
+          {
+            "choice": "On-prem SMTP relay",
+            "why_not": "In-network SMTP relay. Resend scores higher on maintainability and performance (fit -0.6 vs 2.8)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 2.77,
+        "confidence": "medium",
+        "kb_id": "resend",
+        "sources": [
+          "https://resend.com/docs"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "on-device offline store and sync",
+        "choice": "Firestore offline persistence (us-central1 Iowa)",
+        "justification": "Chosen because offline store designed for React Native (Expo); strong scalability (5/5) with priorities.scalability=3; strong time-to-market (5/5) with priorities.time_to_market=3; strong cost efficiency (4/5) with priorities.cost=3. Accepted trade-off: adds a separate hyperscaler account next to the cloudflare platform.",
+        "driven_by": [
+          "requirements.offline_support",
+          "priorities.scalability",
+          "priorities.time_to_market",
+          "infrastructure.vendor_lock_in_tolerance",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "WatermelonDB (SQLite) + custom sync endpoint",
+            "why_not": "Firestore offline persistence scores higher on integration with the frontend and scalability (fit 4.0 vs 4.0)."
+          },
+          {
+            "choice": "PowerSync (Postgres <-> SQLite sync)",
+            "why_not": "Firestore offline persistence scores higher on integration with the frontend and cost (fit 2.4 vs 4.0)."
+          }
+        ],
+        "tradeoffs": [
+          "Adds a separate hyperscaler account next to the cloudflare platform",
+          "High vendor lock-in (proprietary APIs/data model) with lock-in tolerance 'medium'"
+        ],
+        "fit_score": 4.02,
+        "confidence": "low",
+        "kb_id": "firestore_offline_sync",
+        "sources": [
+          "https://firebase.google.com/docs/firestore/manage-data/enable-offline"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 0,
+    "max": 2,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 5,000 users at 12 months, 100 peak concurrent users, ~15 req/s peak (scale tier: tiny)",
+      "Data: ~10 GB in the database, ~0 GB of media, ~73 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work",
+      "Stripe (Payments + Billing) charges per transaction (typically ~2% domestic); not counted as infrastructure"
+    ],
+    "breakdown": [
+      {
+        "component": "Cloudflare (Workers static assets / Pages)",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "tiny tier (~15 req/s peak, 100 concurrent users)"
+      },
+      {
+        "component": "Cloud Firestore",
+        "min": 0.0,
+        "max": 1.0,
+        "basis": "tiny tier instance"
+      },
+      {
+        "component": "Google Cloud Tasks / Pub/Sub (us-central1 Iowa)",
+        "min": 0.0,
+        "max": 1.0,
+        "basis": "tiny tier"
+      },
+      {
+        "component": "Firebase Authentication",
+        "min": 0.0,
+        "max": 0.0,
+        "basis": "5,000 MAU (within free tier)"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "TIMELINE_INFEASIBLE",
+      "severity": "critical",
+      "message": "Scope (~18.0 feature points: 4 platform(s), web_app domain, requirements) far exceeds capacity (2 intermediate engineer(s) x 3 weeks). Ship one platform first.",
+      "fields": [
+        "timeline.mvp_weeks",
+        "team.size",
+        "project.platforms"
+      ]
+    },
+    {
+      "code": "MANY_PLATFORMS_SHORT_TIMELINE",
+      "severity": "warning",
+      "message": "4 client platforms in 3 weeks: cross-platform code sharing is assumed; consider launching on one platform first.",
+      "fields": [
+        "project.platforms",
+        "timeline.mvp_weeks"
+      ]
+    },
+    {
+      "code": "OFFLINE_AND_REALTIME",
+      "severity": "info",
+      "message": "Offline + realtime editing implies CRDT-style merging on reconnect.",
+      "fields": [
+        "requirements.offline_support",
+        "requirements.realtime"
+      ]
+    },
+    {
+      "code": "OFFLINE_CONFLICT_RESOLUTION",
+      "severity": "info",
+      "message": "Offline writes need a conflict policy: client-generated UUIDs, server-authoritative merge or per-field last-write-wins, and idempotent sync endpoints.",
+      "fields": [
+        "requirements.offline_support"
+      ]
+    },
+    {
+      "code": "VENDOR_LOCK_IN",
+      "severity": "info",
+      "message": "Cloud Firestore is proprietary; migrating away later means rewriting the data layer.",
+      "fields": [
+        "infrastructure.vendor_lock_in_tolerance"
+      ]
+    },
+    {
+      "code": "VENDOR_LOCK_IN",
+      "severity": "info",
+      "message": "Firebase (Firestore + Auth + Functions) is proprietary; migrating away later means rewriting the data layer.",
+      "fields": [
+        "infrastructure.vendor_lock_in_tolerance"
+      ]
+    }
+  ],
+  "assumptions": [
+    "No data_residency or user geography given; primary region defaults to US East (move it next to your users)",
+    "RELAXED timeline.mvp_weeks: phase the MVP - first platform and core flow only; cross-platform frameworks were preferred to limit the number of codebases"
+  ],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "tiny",
+    "users_design_target": 5000,
+    "peak_concurrent_users": 100,
+    "peak_rps_estimate": 15,
+    "data_gb": 10.0,
+    "db_gb": 10.0,
+    "media_gb": 0.0,
+    "egress_gb_month": 73.2,
+    "primary_region": "us",
+    "effective_residency": "none",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": false,
+    "feature_points": 18.0,
+    "team_capacity": 6.0,
+    "effort_ratio": 3.0,
+    "background_jobs": true,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": []
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "React + Vite (SPA)",
+        "score": 8.645,
+        "status": "selected",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 shares React/TypeScript skills and code with the React Native (Expo) app",
+          "+0.80 rich client-side interactivity for a web_app"
+        ]
+      },
+      {
+        "choice": "Vue + Vite (SPA)",
+        "score": 8.145,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.80 rich client-side interactivity for a web_app",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "Next.js",
+        "score": 7.86,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.00 shares React/TypeScript skills and code with the React Native (Expo) app",
+          "+0.80 rich client-side interactivity for a web_app",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "SvelteKit",
+        "score": 7.595,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.80 rich client-side interactivity for a web_app",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive web_app",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive web_app",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "React Native (Expo)",
+        "score": 9.245,
+        "status": "selected",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.40 one codebase ships both Android and iOS (project.platforms)",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+1.00 on-device SQLite storage and background sync for offline_support=true"
+        ]
+      },
+      {
+        "choice": "Ionic + Capacitor",
+        "score": 6.95,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.40 one codebase ships both Android and iOS (project.platforms)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Flutter",
+        "score": 4.185,
+        "status": "candidate",
+        "top_factors": [
+          "-2.16 no dart in team.languages: ramp-up time and hiring risk",
+          "+1.40 one codebase ships both Android and iOS (project.platforms)",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.00 on-device SQLite storage and background sync for offline_support=true"
+        ]
+      },
+      {
+        "choice": "Progressive Web App",
+        "score": 4.15,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "-2.00 PWA storage can be evicted and background sync is limited (offline_support=true)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Kotlin + Jetpack Compose (native Android)",
+        "score": null,
+        "status": "excluded",
+        "reason": "does not target ios (project.platforms)",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Swift + SwiftUI (native iOS)",
+        "score": null,
+        "status": "excluded",
+        "reason": "does not target android (project.platforms)",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Unity",
+        "score": null,
+        "status": "excluded",
+        "reason": "game engine: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Godot",
+        "score": null,
+        "status": "excluded",
+        "reason": "game engine: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Tauri",
+        "score": 8.75,
+        "status": "selected",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.80 reuses the React + Vite (SPA) web UI code on the desktop"
+        ]
+      },
+      {
+        "choice": "Electron",
+        "score": 7.2,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.80 reuses the React + Vite (SPA) web UI code on the desktop",
+          "+0.60 same language as the React Native (Expo) mobile app"
+        ]
+      },
+      {
+        "choice": ".NET MAUI / WinUI (desktop)",
+        "score": 1.14,
+        "status": "candidate",
+        "top_factors": [
+          "-2.16 no csharp in team.languages: ramp-up time and hiring risk",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Flutter (desktop)",
+        "score": 0.99,
+        "status": "candidate",
+        "top_factors": [
+          "-2.16 no dart in team.languages: ramp-up time and hiring risk",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": 10.75,
+        "status": "selected",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.20 BaaS covers auth, data and storage without writing server code",
+          "+1.20 SDK-level offline persistence and sync",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": 8.8,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.20 BaaS covers auth, data and storage without writing server code",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Appwrite",
+        "score": 7.3,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.20 BaaS covers auth, data and storage without writing server code",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "NestJS (Node.js LTS, TypeScript)",
+        "score": 6.95,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.60 same language as the web/mobile clients: shared types and validation code",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Fastify (Node.js LTS, TypeScript)",
+        "score": 6.9,
+        "status": "candidate",
+        "top_factors": [
+          "+2.40 team already works in typescript (team.languages)",
+          "+0.60 same language as the web/mobile clients: shared types and validation code",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "PocketBase",
+        "score": 6.078,
+        "status": "candidate",
+        "top_factors": [
+          "+1.73 close to the team's skills: javascript is a short step from typescript",
+          "+1.20 BaaS covers auth, data and storage without writing server code",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Next.js full-stack (Route Handlers + Server Actions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "only applies when the web frontend is Next.js",
+        "fields": [
+          "project.platforms"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "Cloud Firestore",
+        "score": 9.45,
+        "status": "selected",
+        "top_factors": [
+          "+6.00 Firebase is built on Cloud Firestore",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "-1.00 money/relational data needs multi-row ACID guarantees"
+        ]
+      },
+      {
+        "choice": "PostgreSQL",
+        "score": 0.2,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Firebase data model",
+          "+1.50 relational integrity and transactions for a web_app domain",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": -0.5,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Firebase data model",
+          "+1.50 relational integrity and transactions for a web_app domain",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": -0.9,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Firebase data model",
+          "+1.50 relational integrity and transactions for a web_app domain",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "SQL Server (Azure SQL)",
+        "score": -2.25,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Firebase data model",
+          "+1.50 relational integrity and transactions for a web_app domain",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "-0.80 SQL Server licensing outside Azure SQL's managed tiers"
+        ]
+      },
+      {
+        "choice": "SQLite (embedded) + Litestream",
+        "score": -2.9,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Firebase data model",
+          "-2.00 single embedded file cannot serve multiple instances or HA",
+          "+1.50 relational integrity and transactions for a web_app domain",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Cloud Firestore",
+        "score": -0.7,
+        "status": "selected",
+        "top_factors": [
+          "-1.50 adds a hyperscaler account next to cloudflare hosting",
+          "+0.40 fully managed: no operations work for a team without DevOps",
+          "+0.40 managed failover/standby available"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": 6.63,
+        "status": "selected",
+        "top_factors": [
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 strong performance (5/5) with priorities.performance=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Vercel",
+        "score": 6.63,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 gentle learning curve suits a intermediate team on a 3-week timeline",
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong performance (5/5) with priorities.performance=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "DigitalOcean App Platform",
+        "score": 6.13,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 gentle learning curve suits a intermediate team on a 3-week timeline",
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.50 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Firebase Hosting",
+        "score": 6.13,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 gentle learning curve suits a intermediate team on a 3-week timeline",
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.50 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Netlify",
+        "score": 6.13,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 gentle learning curve suits a intermediate team on a 3-week timeline",
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.50 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Render",
+        "score": 6.13,
+        "status": "candidate",
+        "top_factors": [
+          "+1.00 gentle learning curve suits a intermediate team on a 3-week timeline",
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.50 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Amazon GameLift Servers",
+        "score": null,
+        "status": "excluded",
+        "reason": "dedicated game-server fleets: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "On-premise Linux servers + Docker Compose",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud is not on-premise",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "On-premise Kubernetes (RKE2 / k3s)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud is not on-premise",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Docker Compose on cloud VMs",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "scenario_id": "E02",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "15108135be327851",
+  "status": "invalid_input",
+  "summary": "Input is invalid: 22 field errors. Fix them and re-run; no stack was generated.",
+  "architecture_style": "other",
+  "stack": null,
+  "estimated_monthly_cost_usd": {
+    "min": 0,
+    "max": 0,
+    "currency": "USD",
+    "assumptions": [
+      "Not estimated: input is invalid"
+    ],
+    "breakdown": []
+  },
+  "warnings": [],
+  "assumptions": [
+    "infrastructure.existing_systems not provided; default [] applied",
+    "requirements.offline_support not provided; default false applied",
+    "requirements.full_text_search not provided; default false applied",
+    "requirements.file_media_storage not provided; default false applied",
+    "requirements.payments not provided; default false applied",
+    "requirements.multi_tenant not provided; default false applied",
+    "requirements.ml_features not provided; default \"none\" applied",
+    "requirements.seo_critical not provided; default false applied",
+    "priorities.scalability not provided; default 3 applied",
+    "priorities.performance not provided; default 3 applied",
+    "priorities.maintainability not provided; default 3 applied"
+  ],
+  "validation_errors": [
+    {
+      "field": "project.name",
+      "message": "must be a string, got integer 42"
+    },
+    {
+      "field": "project.type",
+      "message": "unknown value \"crypto_exchange\"; allowed: content_site, web_app, saas_b2b, ecommerce, marketplace, social, realtime_collab, fintech, healthtech, data_analytics, iot, ai_ml_product, internal_tool, gaming, api_platform, other"
+    },
+    {
+      "field": "project.platforms",
+      "message": "item 1: unknown value \"smartwatch\"; allowed: web, android, ios, desktop, api_only"
+    },
+    {
+      "field": "scale.users_at_launch",
+      "message": "must be >= 0, got -10"
+    },
+    {
+      "field": "scale.users_12_months",
+      "message": "must be an integer, got string \"lots\""
+    },
+    {
+      "field": "scale.traffic_pattern",
+      "message": "unknown value \"Spiky\"; allowed: steady, spiky, seasonal (did you mean \"spiky\"?)"
+    },
+    {
+      "field": "team.size",
+      "message": "must be >= 1, got 0"
+    },
+    {
+      "field": "team.experience",
+      "message": "unknown value \"expert\"; allowed: beginner, intermediate, senior, mixed"
+    },
+    {
+      "field": "team.languages",
+      "message": "must be a list of strings, got string \"python\""
+    },
+    {
+      "field": "team.has_devops",
+      "message": "must be a boolean (true/false), got string \"yes\""
+    },
+    {
+      "field": "budget.monthly_infra_usd",
+      "message": "must be >= 0, got -50"
+    },
+    {
+      "field": "timeline.mvp_weeks",
+      "message": "must be an integer, got number 2.5"
+    },
+    {
+      "field": "infrastructure.cloud_preference",
+      "message": "unknown value \"AWS\"; allowed: any, aws, gcp, azure, none (did you mean \"aws\"?)"
+    },
+    {
+      "field": "infrastructure.deployment_model",
+      "message": "unknown value \"hybrid\"; allowed: managed_cloud, self_hosted_cloud_vm, on_premise, air_gapped"
+    },
+    {
+      "field": "requirements.realtime",
+      "message": "must be a boolean (true/false), got string \"true\""
+    },
+    {
+      "field": "requirements.auth",
+      "message": "unknown value \"magic_link\"; allowed: none, email_password, social, phone_otp, enterprise_sso"
+    },
+    {
+      "field": "requirements.availability",
+      "message": "must be one of ['99', '99.9', '99.95', '99.99'], got number 99.9"
+    },
+    {
+      "field": "requirements.p95_latency_ms",
+      "message": "must be >= 1, got 0"
+    },
+    {
+      "field": "compliance",
+      "message": "item 1: unknown value \"ccpa\"; allowed: gdpr, dpdp, hipaa, pci_dss, rbi_localisation, soc2, iso27001"
+    },
+    {
+      "field": "priorities.cost",
+      "message": "must be between 1 and 5, got 7"
+    },
+    {
+      "field": "priorities.time_to_market",
+      "message": "must be between 1 and 5, got 0"
+    },
+    {
+      "field": "priorities.security",
+      "message": "must be an integer from 1 to 5, got number 3.5"
+    }
+  ],
+  "llm_used": false
+}

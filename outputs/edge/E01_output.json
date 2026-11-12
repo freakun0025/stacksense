@@ -1,0 +1,77 @@
+{
+  "scenario_id": "E01",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "a9dd948de8e64c71",
+  "status": "invalid_input",
+  "summary": "Input is invalid: 7 field errors. Fix them and re-run; no stack was generated.",
+  "architecture_style": "other",
+  "stack": null,
+  "estimated_monthly_cost_usd": {
+    "min": 0,
+    "max": 0,
+    "currency": "USD",
+    "assumptions": [
+      "Not estimated: input is invalid"
+    ],
+    "breakdown": []
+  },
+  "warnings": [],
+  "assumptions": [
+    "scale.traffic_pattern not provided; default \"steady\" applied",
+    "scale.workload not provided; default \"balanced\" applied",
+    "team.has_devops not provided; default false applied",
+    "infrastructure.cloud_preference not provided; default \"any\" applied",
+    "infrastructure.deployment_model not provided; default \"managed_cloud\" applied",
+    "infrastructure.data_residency not provided; default \"none\" applied",
+    "infrastructure.existing_systems not provided; default [] applied",
+    "requirements.realtime not provided; default false applied",
+    "requirements.offline_support not provided; default false applied",
+    "requirements.full_text_search not provided; default false applied",
+    "requirements.file_media_storage not provided; default false applied",
+    "requirements.payments not provided; default false applied",
+    "requirements.auth not provided; default \"none\" applied",
+    "requirements.multi_tenant not provided; default false applied",
+    "requirements.ml_features not provided; default \"none\" applied",
+    "requirements.seo_critical not provided; default false applied",
+    "requirements.availability not provided; default \"99.9\" applied",
+    "compliance not provided; default [] applied",
+    "priorities.cost not provided; default 3 applied",
+    "priorities.time_to_market not provided; default 3 applied",
+    "priorities.scalability not provided; default 3 applied",
+    "priorities.performance not provided; default 3 applied",
+    "priorities.maintainability not provided; default 3 applied",
+    "priorities.security not provided; default 3 applied"
+  ],
+  "validation_errors": [
+    {
+      "field": "project.platforms",
+      "message": "is required but missing"
+    },
+    {
+      "field": "scale.users_at_launch",
+      "message": "is required but missing"
+    },
+    {
+      "field": "scale.users_12_months",
+      "message": "is required but missing"
+    },
+    {
+      "field": "team.experience",
+      "message": "is required but missing"
+    },
+    {
+      "field": "team.languages",
+      "message": "is required but missing"
+    },
+    {
+      "field": "budget.monthly_infra_usd",
+      "message": "is required but missing"
+    },
+    {
+      "field": "timeline.mvp_weeks",
+      "message": "is required but missing"
+    }
+  ],
+  "llm_used": false
+}

@@ -1,0 +1,793 @@
+{
+  "scenario_id": "E11",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "450eca295f8d1ef7",
+  "status": "ok_with_warnings",
+  "summary": "Modular monolith: ASP.NET Core + Self-managed PostgreSQL serving Blazor (ASP.NET Core), hosted on On-premise Linux servers + Docker Compose (your data centre). Estimated $45-190/month (within the $200 budget).",
+  "architecture_style": "modular_monolith",
+  "architecture_rationale": {
+    "text": "One deployable with strict internal modules for the internal_tool domain: a 4-engineer team gets clear boundaries without distributed-system overhead; modules can be extracted later if scale demands it. Over-engineering guard: microservices rejected: 4 engineer(s) cannot absorb the operational overhead.",
+    "driven_by": [
+      "team.size",
+      "project.type",
+      "team.has_devops"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "Blazor (ASP.NET Core)",
+      "justification": "Web - Blazor (ASP.NET Core): Chosen because team already works in csharp (team.languages); strong maintainability (5/5) with priorities.maintainability=3; rich client-side interactivity for a internal_tool; strong security (5/5) with priorities.security=3.",
+      "driven_by": [
+        "team.languages",
+        "priorities.maintainability",
+        "project.type",
+        "priorities.security",
+        "priorities.cost",
+        "priorities.performance"
+      ],
+      "alternatives": [
+        {
+          "choice": "Server-rendered templates + HTMX",
+          "why_not": "Blazor scores higher on maintainability and fit for the project type (fit 6.1 vs 6.8)."
+        },
+        {
+          "choice": "Vue + Vite (SPA)",
+          "why_not": "No javascript/typescript in team.languages: ramp-up time and hiring risk. Blazor scores higher on maintainability and security (fit 2.8 vs 6.8)."
+        }
+      ],
+      "tradeoffs": [
+        "Interactive Server mode keeps a SignalR circuit per user",
+        "WebAssembly mode has a larger first download"
+      ],
+      "fit_score": 6.825,
+      "confidence": "low",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "Blazor (ASP.NET Core)",
+          "version": ".NET 10 LTS",
+          "kb_id": "blazor"
+        }
+      ],
+      "sources": [
+        "https://learn.microsoft.com/aspnet/core/blazor/",
+        "https://learn.microsoft.com/aspnet/core/"
+      ]
+    },
+    "backend": {
+      "choice": "ASP.NET Core (.NET 10 LTS)",
+      "justification": "Chosen because team already works in csharp (team.languages); Microsoft.Identity.Web makes Entra ID SSO a configuration task; strong maintainability (5/5) with priorities.maintainability=3; strong performance (5/5) with priorities.performance=3.",
+      "driven_by": [
+        "team.languages",
+        "priorities.maintainability",
+        "infrastructure.existing_systems",
+        "priorities.performance",
+        "priorities.scalability",
+        "priorities.security"
+      ],
+      "alternatives": [
+        {
+          "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+          "why_not": "Self-hosting a full BaaS stack on-premise is operationally heavy. ASP.NET Core scores higher on maintainability and reuse of existing systems (fit 4.8 vs 9.6)."
+        },
+        {
+          "choice": "Django (Python)",
+          "why_not": "No python in team.languages: ramp-up time and hiring risk. ASP.NET Core scores higher on reuse of existing systems and performance (fit 2.9 vs 9.6)."
+        },
+        {
+          "choice": "Serverless functions",
+          "why_not": "Excluded by hard constraint: deployment_model=on_premise allows only self-hostable components; Serverless functions is a managed/SaaS service."
+        }
+      ],
+      "tradeoffs": [
+        "Best tooling on Windows/Azure (runs everywhere)"
+      ],
+      "fit_score": 9.6,
+      "confidence": "high",
+      "kb_id": "aspnet_core",
+      "version": ".NET 10 LTS",
+      "sources": [
+        "https://learn.microsoft.com/aspnet/core/",
+        "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+        "https://www.techempower.com/benchmarks/"
+      ]
+    },
+    "database": {
+      "choice": "Self-managed PostgreSQL (Patroni/pgBackRest) (your data centre)",
+      "justification": "Chosen because relational integrity and transactions for a internal_tool domain; strong maintainability (5/5) with priorities.maintainability=3; strong security (5/5) with priorities.security=3; strong cost efficiency (4/5) with priorities.cost=3. Managed as Self-managed PostgreSQL (Patroni/pgBackRest): same platform and private network as the application hosting.",
+      "driven_by": [
+        "project.type",
+        "priorities.maintainability",
+        "priorities.security",
+        "priorities.cost",
+        "priorities.performance",
+        "priorities.scalability",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "TimescaleDB (PostgreSQL extension)",
+          "why_not": "Self-managed PostgreSQL scores higher on maintainability and security (fit 5.9 vs 6.6)."
+        },
+        {
+          "choice": "SQL Server (Azure SQL)",
+          "why_not": "SQL Server licensing outside Azure SQL's managed tiers. Self-managed PostgreSQL scores higher on maintainability (fit 5.7 vs 6.6)."
+        },
+        {
+          "choice": "Google BigQuery",
+          "why_not": "Excluded by hard constraint: deployment_model=on_premise allows only self-hostable components; Google BigQuery is a managed/SaaS service."
+        },
+        {
+          "choice": "Amazon Aurora PostgreSQL",
+          "why_not": "Excluded by hard constraint: deployment_model=on_premise allows only self-hostable components; Amazon Aurora PostgreSQL is a managed/SaaS service."
+        }
+      ],
+      "tradeoffs": [
+        "Single-writer primary: write scale beyond one large node needs partitioning/sharding",
+        "Vacuum and connection pooling need attention at scale"
+      ],
+      "fit_score": 6.6,
+      "confidence": "low",
+      "kb_id": "postgresql",
+      "version": "PostgreSQL 17/18",
+      "sources": [
+        "https://www.postgresql.org/docs/",
+        "https://www.postgresql.org/docs/current/textsearch.html",
+        "https://postgis.net/documentation/"
+      ],
+      "engine": "PostgreSQL",
+      "offering": "Self-managed PostgreSQL (Patroni/pgBackRest)",
+      "offering_kb_id": "self_pg"
+    },
+    "hosting": {
+      "choice": "On-premise Linux servers + Docker Compose (your data centre)",
+      "justification": "Chosen because runs the ASP.NET Core (.NET 10 LTS) container as-is; strong cost efficiency (4/5) with priorities.cost=3; strong performance (4/5) with priorities.performance=3; strong security (4/5) with priorities.security=3.",
+      "driven_by": [
+        "priorities.cost",
+        "priorities.performance",
+        "priorities.security",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "On-premise Kubernetes (RKE2 / k3s)",
+          "why_not": "Over-engineering for 5,000 users (pays off beyond ~200,000); steep learning curve for a intermediate team. On-premise Linux servers + Docker Compose scores higher on cost (fit -1.5 vs 1.7)."
+        },
+        {
+          "choice": "Google Cloud Run",
+          "why_not": "Excluded by hard constraint: deployment_model=on_premise allows only self-hostable components; Google Cloud Run is a managed/SaaS service."
+        }
+      ],
+      "tradeoffs": [
+        "Hardware, patching, backups and DR are your responsibility"
+      ],
+      "fit_score": 1.67,
+      "confidence": "high",
+      "kb_id": "onprem_compose",
+      "sources": [
+        "https://docs.docker.com/compose/"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "auth",
+        "choice": "Keycloak (self-hosted)",
+        "justification": "Chosen because runs inside the on-premise network; strong security (5/5) with priorities.security=3; SAML/OIDC broker with LDAP federation; strong cost efficiency (4/5) with priorities.cost=3.",
+        "driven_by": [
+          "requirements.auth",
+          "infrastructure.deployment_model",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Microsoft Entra ID",
+            "why_not": "Excluded by hard constraint: deployment_model=on_premise allows only self-hostable components; Microsoft Entra ID is a managed/SaaS service."
+          }
+        ],
+        "tradeoffs": [
+          "Upgrades and HA are your job"
+        ],
+        "fit_score": 4.1,
+        "confidence": "high",
+        "kb_id": "keycloak",
+        "sources": [
+          "https://www.keycloak.org/documentation"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "GitLab CI (self-managed)",
+        "justification": "Chosen because CI that runs inside the restricted network; runs inside the on-premise network; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3.",
+        "driven_by": [
+          "team.has_devops",
+          "infrastructure.deployment_model",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "GitHub Actions",
+            "why_not": "Excluded by hard constraint: deployment_model=on_premise allows only self-hostable components; GitHub Actions is a managed/SaaS service."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 8.3,
+        "confidence": "high",
+        "kb_id": "gitlab_self",
+        "sources": [
+          "https://docs.gitlab.com/ci/"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Prometheus + Grafana + Loki (self-hosted)",
+        "justification": "Chosen because runs inside the on-premise network; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3; strong cost efficiency (4/5) with priorities.cost=3.",
+        "driven_by": [
+          "requirements.availability",
+          "infrastructure.deployment_model",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance"
+        ],
+        "alternatives": [
+          {
+            "choice": "Azure Monitor Application Insights",
+            "why_not": "Excluded by hard constraint: deployment_model=on_premise allows only self-hostable components; Azure Monitor Application Insights is a managed/SaaS service."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 3.95,
+        "confidence": "high",
+        "kb_id": "lgtm_self",
+        "sources": [
+          "https://prometheus.io/docs/introduction/overview/",
+          "https://grafana.com/docs/"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 45,
+    "max": 190,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 5,000 users at 12 months, 100 peak concurrent users, ~15 req/s peak (scale tier: tiny)",
+      "Data: ~10 GB in the database, ~0 GB of media, ~73 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work",
+      "On-premise figures are amortised hardware/power estimates; staff time not included"
+    ],
+    "breakdown": [
+      {
+        "component": "On-premise Linux servers + Docker Compose (your data centre)",
+        "min": 20.0,
+        "max": 80.0,
+        "basis": "tiny tier (~15 req/s peak, 100 concurrent users)"
+      },
+      {
+        "component": "Self-managed PostgreSQL (Patroni/pgBackRest)",
+        "min": 0.0,
+        "max": 10.0,
+        "basis": "tiny tier instance"
+      },
+      {
+        "component": "Keycloak (self-hosted)",
+        "min": 10.0,
+        "max": 40.0,
+        "basis": "5,000 MAU"
+      },
+      {
+        "component": "GitLab CI (self-managed)",
+        "min": 10.0,
+        "max": 40.0,
+        "basis": "tiny tier"
+      },
+      {
+        "component": "Prometheus + Grafana + Loki (self-hosted)",
+        "min": 5.0,
+        "max": 20.0,
+        "basis": "tiny tier"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "CLOUD_PREFERENCE_ON_PREMISE",
+      "severity": "critical",
+      "message": "cloud_preference=aws conflicts with deployment_model=on_premise. Deployment model takes precedence; AWS's on-prem offering (AWS Outposts) is an option if you need its APIs.",
+      "fields": [
+        "infrastructure.cloud_preference",
+        "infrastructure.deployment_model"
+      ]
+    },
+    {
+      "code": "END_OF_LIFE_DEPENDENCY",
+      "severity": "warning",
+      "message": "'SQL Server 2016' matches SQL Server 2016, end of life since 2026-07-14. It is not recommended; migrate to SQL Server 2022 or Azure SQL.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "EXISTING_SYSTEM_REUSED",
+      "severity": "info",
+      "message": "'Active Directory (on-prem LDAP)': integrate via OIDC/SAML federation.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    },
+    {
+      "code": "EXISTING_SYSTEM_REUSED",
+      "severity": "info",
+      "message": "'SQL Server 2016': reused/migrated into PostgreSQL.",
+      "fields": [
+        "infrastructure.existing_systems"
+      ]
+    }
+  ],
+  "assumptions": [
+    "No data_residency or user geography given; primary region defaults to US East (move it next to your users)",
+    "RELAXED infrastructure.cloud_preference: 'aws' not applied because deployment_model=on_premise"
+  ],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "tiny",
+    "users_design_target": 5000,
+    "peak_concurrent_users": 100,
+    "peak_rps_estimate": 15,
+    "data_gb": 10.0,
+    "db_gb": 10.0,
+    "media_gb": 0.0,
+    "egress_gb_month": 73.2,
+    "primary_region": "us",
+    "effective_residency": "none",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": false,
+    "feature_points": 3.5,
+    "team_capacity": 40.0,
+    "effort_ratio": 0.09,
+    "background_jobs": false,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": []
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "Blazor (ASP.NET Core)",
+        "score": 6.825,
+        "status": "selected",
+        "top_factors": [
+          "+2.00 team already works in csharp (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.80 rich client-side interactivity for a internal_tool",
+          "+0.66 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "Server-rendered templates + HTMX",
+        "score": 6.145,
+        "status": "candidate",
+        "top_factors": [
+          "+2.00 team already works in csharp (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.60 form-heavy CRUD screens render well on the server",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "Vue + Vite (SPA)",
+        "score": 2.845,
+        "status": "candidate",
+        "top_factors": [
+          "-1.80 no javascript/typescript in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.80 rich client-side interactivity for a internal_tool",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "SvelteKit",
+        "score": 2.695,
+        "status": "candidate",
+        "top_factors": [
+          "-1.80 no javascript/typescript in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.80 rich client-side interactivity for a internal_tool",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive internal_tool",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive internal_tool",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "ASP.NET Core (.NET 10 LTS)",
+        "score": 9.6,
+        "status": "selected",
+        "top_factors": [
+          "+2.00 team already works in csharp (team.languages)",
+          "+1.20 Microsoft.Identity.Web makes Entra ID SSO a configuration task",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong performance (5/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": 4.8,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 self-hosting a full BaaS stack on-premise is operationally heavy",
+          "+2.00 team already works in sql (team.languages)",
+          "+1.20 BaaS covers auth, data and storage without writing server code",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Django (Python)",
+        "score": 2.9,
+        "status": "candidate",
+        "top_factors": [
+          "-1.80 no python in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Go (net/http + chi)",
+        "score": 2.9,
+        "status": "candidate",
+        "top_factors": [
+          "-1.80 no go in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Phoenix (Elixir)",
+        "score": 2.45,
+        "status": "candidate",
+        "top_factors": [
+          "-1.80 no elixir in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Spring Boot (Java/Kotlin, JVM LTS)",
+        "score": 2.05,
+        "status": "candidate",
+        "top_factors": [
+          "-1.80 no java/kotlin in team.languages: ramp-up time and hiring risk",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Firebase (Firestore + Auth + Functions) is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Serverless functions",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Serverless functions is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Next.js full-stack (Route Handlers + Server Actions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "only applies when the web frontend is Next.js",
+        "fields": [
+          "project.platforms"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "PostgreSQL",
+        "score": 6.6,
+        "status": "selected",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a internal_tool domain",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": 5.9,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a internal_tool domain",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "SQL Server (Azure SQL)",
+        "score": 5.65,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 continues the team's existing 'SQL Server 2016' technology on a supported version",
+          "+1.50 relational integrity and transactions for a internal_tool domain",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "-0.80 SQL Server licensing outside Azure SQL's managed tiers"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": 5.5,
+        "status": "candidate",
+        "top_factors": [
+          "+1.50 relational integrity and transactions for a internal_tool domain",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "SQLite (embedded) + Litestream",
+        "score": 3.5,
+        "status": "candidate",
+        "top_factors": [
+          "-2.00 single embedded file cannot serve multiple instances or HA",
+          "+1.50 relational integrity and transactions for a internal_tool domain",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong performance (5/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "MongoDB",
+        "score": 2.45,
+        "status": "candidate",
+        "top_factors": [
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "-1.00 money/relational data needs multi-row ACID guarantees",
+          "+0.55 strong performance (4/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Google BigQuery is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Amazon DynamoDB",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Amazon DynamoDB is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Cloud Firestore",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Cloud Firestore is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Azure Cosmos DB",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Azure Cosmos DB is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Self-managed PostgreSQL (Patroni/pgBackRest)",
+        "score": 2.6,
+        "status": "selected",
+        "top_factors": [
+          "+3.00 same platform and private network as the application hosting",
+          "-0.40 high operational burden (4/5) even with DevOps support"
+        ]
+      },
+      {
+        "choice": "Amazon Aurora PostgreSQL",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Amazon Aurora PostgreSQL is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Azure Database for PostgreSQL (Flexible Server)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Azure Database for PostgreSQL (Flexible Server) is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Cloud SQL for PostgreSQL",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Cloud SQL for PostgreSQL is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "DigitalOcean Managed PostgreSQL",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; DigitalOcean Managed PostgreSQL is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Neon serverless Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Neon serverless Postgres is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Railway Postgres",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Railway Postgres is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "On-premise Linux servers + Docker Compose",
+        "score": 1.67,
+        "status": "selected",
+        "top_factors": [
+          "+0.50 runs the ASP.NET Core (.NET 10 LTS) container as-is",
+          "+0.50 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.50 strong performance (4/5) with priorities.performance=3",
+          "+0.50 strong security (4/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "On-premise Kubernetes (RKE2 / k3s)",
+        "score": -1.512,
+        "status": "candidate",
+        "top_factors": [
+          "-3.10 over-engineering for 5,000 users (pays off beyond ~200,000)",
+          "+1.00 strong performance (5/5) with priorities.performance=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3",
+          "-0.96 high operational burden (5/5) even with DevOps support"
+        ]
+      },
+      {
+        "choice": "AWS Amplify Hosting",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; AWS Amplify Hosting is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Azure App Service",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Azure App Service is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Azure Static Web Apps",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Azure Static Web Apps is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "AWS Elastic Beanstalk",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; AWS Elastic Beanstalk is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Google Cloud Run",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Google Cloud Run is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=on_premise allows only self-hostable components; Cloudflare (Workers static assets / Pages) is a managed/SaaS service",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,1082 @@
+{
+  "scenario_id": "E03",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "27b723ac441c6dcc",
+  "status": "ok_with_warnings",
+  "summary": "Serverless/BaaS architecture: Firebase serving React + Vite (SPA) (web) + React Native (Expo) for Android + iOS, hosted on Cloudflare (Workers static assets / Pages). Estimated $23,300-44,800/month (above the $0 budget).",
+  "architecture_style": "serverless",
+  "architecture_rationale": {
+    "text": "Firebase provides data, auth and APIs as managed services; custom logic runs as functions, so there is no server fleet to operate. Over-engineering guard: microservices rejected: 1 engineer(s), no DevOps cannot absorb the operational overhead.",
+    "driven_by": [
+      "team.size",
+      "team.has_devops",
+      "priorities.time_to_market"
+    ]
+  },
+  "stack": {
+    "frontend": {
+      "choice": "React + Vite (SPA) (web) + React Native (Expo) for Android + iOS",
+      "justification": "Web - React + Vite (SPA): Chosen because team already works in javascript (team.languages); strong cost efficiency (5/5) with priorities.cost=3; shares React/TypeScript skills and code with the React Native (Expo) app; rich client-side interactivity for a social. Mobile - React Native (Expo): Chosen because team already works in javascript (team.languages); one codebase ships both Android and iOS (project.platforms); strong time-to-market (5/5) with priorities.time_to_market=3; gentle learning curve suits a beginner team on a 4-week timeline.",
+      "driven_by": [
+        "team.languages",
+        "priorities.cost",
+        "project.platforms",
+        "priorities.maintainability",
+        "project.type",
+        "priorities.performance",
+        "priorities.time_to_market",
+        "team.experience"
+      ],
+      "alternatives": [
+        {
+          "choice": "Vue + Vite (SPA) (web)",
+          "why_not": "React + Vite scores higher on platform coverage (fit 8.7 vs 8.9)."
+        },
+        {
+          "choice": "Ionic + Capacitor for Android + iOS",
+          "why_not": "React Native scores higher on maintainability and performance (fit 8.9 vs 9.3)."
+        }
+      ],
+      "tradeoffs": [
+        "Routing/data fetching choices left to the team",
+        "Some native modules need custom development builds"
+      ],
+      "fit_score": 8.865,
+      "confidence": "low",
+      "components": [
+        {
+          "platform": "web",
+          "choice": "React + Vite (SPA)",
+          "version": "React 19 + Vite",
+          "kb_id": "react_vite"
+        },
+        {
+          "platform": "android + ios",
+          "choice": "React Native (Expo)",
+          "version": "Expo SDK (New Architecture)",
+          "kb_id": "expo_rn"
+        }
+      ],
+      "sources": [
+        "https://react.dev/",
+        "https://vite.dev/guide/",
+        "https://docs.expo.dev/",
+        "https://reactnative.dev/docs/getting-started"
+      ]
+    },
+    "backend": {
+      "choice": "Firebase (Firestore + Auth + Functions)",
+      "justification": "Chosen because team already works in javascript (team.languages); gentle learning curve suits a beginner team on a 4-week timeline; strong scalability (5/5) with priorities.scalability=3; strong time-to-market (5/5) with priorities.time_to_market=3. Accepted trade-off: complex social workflows outgrow BaaS rules and edge functions.",
+      "driven_by": [
+        "team.languages",
+        "team.experience",
+        "project.type",
+        "priorities.scalability",
+        "priorities.time_to_market",
+        "infrastructure.vendor_lock_in_tolerance"
+      ],
+      "alternatives": [
+        {
+          "choice": "NestJS (Node.js LTS, TypeScript)",
+          "why_not": "Firebase scores higher on learning curve and performance (fit 8.5 vs 9.2)."
+        },
+        {
+          "choice": "Fastify (Node.js LTS, TypeScript)",
+          "why_not": "Firebase scores higher on learning curve and scalability (fit 8.1 vs 9.2)."
+        }
+      ],
+      "tradeoffs": [
+        "Proprietary data model and APIs (high lock-in)",
+        "Firebase Authentication offers no data-location choice",
+        "Weak at relational queries and reporting",
+        "Complex social workflows outgrow BaaS rules and edge functions"
+      ],
+      "fit_score": 9.22,
+      "confidence": "low",
+      "kb_id": "firebase",
+      "sources": [
+        "https://firebase.google.com/docs",
+        "https://firebase.google.com/docs/projects/locations",
+        "https://firebase.google.com/pricing"
+      ]
+    },
+    "database": {
+      "choice": "Cloud Firestore (us-central1 Iowa)",
+      "justification": "Chosen because Firebase is built on Cloud Firestore; strong scalability (5/5) with priorities.scalability=3; strong time-to-market (5/5) with priorities.time_to_market=3; strong cost efficiency (4/5) with priorities.cost=3. Accepted trade-off: money/relational data needs multi-row ACID guarantees. Managed as Cloud Firestore: fully managed: no operations work for a team without DevOps; managed failover/standby available.",
+      "driven_by": [
+        "priorities.scalability",
+        "priorities.time_to_market",
+        "project.type",
+        "infrastructure.vendor_lock_in_tolerance",
+        "priorities.cost",
+        "priorities.performance",
+        "budget.monthly_infra_usd",
+        "requirements.availability",
+        "team.has_devops"
+      ],
+      "alternatives": [
+        {
+          "choice": "PostgreSQL",
+          "why_not": "Would bypass the Firebase data model. Cloud Firestore scores higher on scalability and time-to-market (fit 0.2 vs 8.8)."
+        },
+        {
+          "choice": "TimescaleDB (PostgreSQL extension)",
+          "why_not": "Would bypass the Firebase data model. Cloud Firestore scores higher on scalability and time-to-market (fit -0.5 vs 8.8)."
+        }
+      ],
+      "tradeoffs": [
+        "Limited querying/joins; reporting needs exports",
+        "Proprietary (high lock-in)",
+        "Money/relational data needs multi-row ACID guarantees",
+        "High vendor lock-in (proprietary APIs/data model) with lock-in tolerance 'medium'",
+        "Cloud Firestore starts around $2,250/month against a $0/month total budget"
+      ],
+      "fit_score": 8.85,
+      "confidence": "high",
+      "kb_id": "firestore",
+      "sources": [
+        "https://firebase.google.com/docs/firestore",
+        "https://firebase.google.com/docs/firestore/manage-data/enable-offline"
+      ],
+      "engine": "Cloud Firestore",
+      "offering": "Cloud Firestore",
+      "offering_kb_id": "firestore_off"
+    },
+    "hosting": {
+      "choice": "Cloudflare (Workers static assets / Pages)",
+      "justification": "Chosen because serves the web frontend; the BaaS handles data and auth; strong cost efficiency (5/5) with priorities.cost=3; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3. Accepted trade-off: limited multi-zone guarantees for 99.99%.",
+      "driven_by": [
+        "priorities.cost",
+        "priorities.performance",
+        "priorities.scalability",
+        "team.experience",
+        "priorities.maintainability",
+        "requirements.availability"
+      ],
+      "alternatives": [
+        {
+          "choice": "Google Cloud Run",
+          "why_not": "Google Cloud Run starts around $1,500/month against a $0/month total budget; container platform is unnecessary when Firebase is the backend. Cloudflare scores higher on performance (fit 3.8 vs 6.3)."
+        },
+        {
+          "choice": "Vercel",
+          "why_not": "Vercel starts around $1,500/month against a $0/month total budget. Cloudflare scores higher on cost (fit 3.1 vs 6.3)."
+        },
+        {
+          "choice": "On-premise Kubernetes (RKE2 / k3s)",
+          "why_not": "Excluded by hard constraint: deployment_model=managed_cloud is not on-premise."
+        }
+      ],
+      "tradeoffs": [
+        "Cloudflare now steers new projects from Pages to Workers static assets",
+        "Limited multi-zone guarantees for 99.99%"
+      ],
+      "fit_score": 6.33,
+      "confidence": "high",
+      "kb_id": "cloudflare",
+      "sources": [
+        "https://developers.cloudflare.com/workers/static-assets/",
+        "https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/",
+        "https://developers.cloudflare.com/workers/platform/pricing/"
+      ]
+    },
+    "supporting": [
+      {
+        "layer": "queue",
+        "choice": "Google Cloud Tasks / Pub/Sub (us-central1 Iowa)",
+        "justification": "Chosen because strong cost efficiency (5/5) with priorities.cost=3; strong performance (5/5) with priorities.performance=3; strong scalability (5/5) with priorities.scalability=3; strong security (5/5) with priorities.security=3. Accepted trade-off: Google Cloud Tasks / Pub/Sub starts around $150/month against a $0/month total budget.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "budget.monthly_infra_usd",
+          "priorities.cost",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.security",
+          "priorities.maintainability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Amazon SQS (+ EventBridge Scheduler)",
+            "why_not": "A close runner-up with a slightly weaker overall fit (fit -1.2 vs -1.2)."
+          },
+          {
+            "choice": "Azure Service Bus",
+            "why_not": "Google Cloud Tasks / Pub/Sub scores higher on cost (fit -1.5 vs -1.2)."
+          }
+        ],
+        "tradeoffs": [
+          "Google Cloud Tasks / Pub/Sub starts around $150/month against a $0/month total budget",
+          "Adds a separate hyperscaler account next to the cloudflare platform"
+        ],
+        "fit_score": -1.18,
+        "confidence": "low",
+        "kb_id": "cloud_tasks",
+        "sources": [
+          "https://cloud.google.com/tasks/docs",
+          "https://cloud.google.com/pubsub/docs"
+        ]
+      },
+      {
+        "layer": "auth",
+        "choice": "Firebase Authentication",
+        "justification": "Chosen because auth built into the chosen BaaS; free tier fits budget.monthly_infra_usd=0; strong cost efficiency (5/5) with priorities.cost=3; strong scalability (5/5) with priorities.scalability=3. Accepted trade-off: Firebase Authentication starts around $19,058/month against a $0/month total budget.",
+        "driven_by": [
+          "requirements.auth",
+          "budget.monthly_infra_usd",
+          "priorities.cost",
+          "priorities.scalability",
+          "priorities.time_to_market",
+          "infrastructure.vendor_lock_in_tolerance",
+          "priorities.maintainability"
+        ],
+        "alternatives": [
+          {
+            "choice": "WorkOS (AuthKit + SSO)",
+            "why_not": "~$7,000+/month in per-user identity fees for 5,000,000 users. Firebase Authentication scores higher on integration with the backend and scalability (fit -2.4 vs -1.8)."
+          },
+          {
+            "choice": "Auth0 (Okta)",
+            "why_not": "~$243,775+/month in per-user identity fees for 5,000,000 users. Firebase Authentication scores higher on integration with the backend (fit -2.6 vs -1.8)."
+          }
+        ],
+        "tradeoffs": [
+          "No choice of data location for identity data",
+          "Firebase Authentication starts around $19,058/month against a $0/month total budget",
+          "~$19,058+/month in per-user identity fees for 5,000,000 users",
+          "Adds a separate hyperscaler account next to the cloudflare platform"
+        ],
+        "fit_score": -1.83,
+        "confidence": "low",
+        "kb_id": "firebase_auth",
+        "sources": [
+          "https://firebase.google.com/docs/projects/locations"
+        ]
+      },
+      {
+        "layer": "storage",
+        "choice": "Cloudflare R2",
+        "justification": "Chosen because same cloud/platform and region as the application; no egress fees on ~146,484 GB/month; free tier fits budget.monthly_infra_usd=0; strong cost efficiency (5/5) with priorities.cost=3.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "budget.monthly_infra_usd",
+          "priorities.cost",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.maintainability"
+        ],
+        "alternatives": [
+          {
+            "choice": "DigitalOcean Spaces",
+            "why_not": "Cloudflare R2 scores higher on integration with the hosting platform and file media storage (fit 3.9 vs 7.8)."
+          },
+          {
+            "choice": "Azure Blob Storage",
+            "why_not": "Adds a separate hyperscaler account next to the cloudflare platform. Cloudflare R2 scores higher on file media storage and cost (fit 3.1 vs 7.8)."
+          }
+        ],
+        "tradeoffs": [
+          "Data-location jurisdictions only for EU (and FedRAMP)"
+        ],
+        "fit_score": 7.77,
+        "confidence": "high",
+        "kb_id": "r2",
+        "sources": [
+          "https://developers.cloudflare.com/r2/",
+          "https://developers.cloudflare.com/r2/reference/data-location/"
+        ]
+      },
+      {
+        "layer": "cdn",
+        "choice": "Built-in CDN of Cloudflare",
+        "justification": "Chosen because the hosting platform already serves through a global CDN; free tier fits budget.monthly_infra_usd=0; strong cost efficiency (5/5) with priorities.cost=3; strong performance (5/5) with priorities.performance=3.",
+        "driven_by": [
+          "requirements.file_media_storage",
+          "scale.users_12_months",
+          "budget.monthly_infra_usd",
+          "priorities.cost",
+          "priorities.performance",
+          "priorities.scalability",
+          "priorities.time_to_market"
+        ],
+        "alternatives": [
+          {
+            "choice": "Cloudflare CDN (free/pro plan)",
+            "why_not": "Cloudflare CDN (free/pro plan) starts around $250/month against a $0/month total budget. Built-in CDN of Cloudflare scores higher on integration with the hosting platform (fit 4.0 vs 8.6)."
+          },
+          {
+            "choice": "Amazon CloudFront",
+            "why_not": "Amazon CloudFront starts around $400/month against a $0/month total budget. Built-in CDN of Cloudflare scores higher on integration with the hosting platform and time-to-market (fit 0.3 vs 8.6)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 8.62,
+        "confidence": "high",
+        "kb_id": "host_cdn",
+        "sources": [
+          "https://vercel.com/docs",
+          "https://docs.netlify.com/",
+          "https://developers.cloudflare.com/workers/static-assets/"
+        ]
+      },
+      {
+        "layer": "realtime",
+        "choice": "Firestore realtime listeners (us-central1 Iowa)",
+        "justification": "Chosen because built into the BaaS already in the stack; free tier fits budget.monthly_infra_usd=0; strong scalability (5/5) with priorities.scalability=3; strong time-to-market (5/5) with priorities.time_to_market=3. Accepted trade-off: adds a separate hyperscaler account next to the cloudflare platform.",
+        "driven_by": [
+          "requirements.realtime",
+          "budget.monthly_infra_usd",
+          "priorities.scalability",
+          "priorities.time_to_market",
+          "infrastructure.vendor_lock_in_tolerance",
+          "priorities.cost",
+          "priorities.maintainability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Ably",
+            "why_not": "Ably starts around $2,500/month against a $0/month total budget. Firestore realtime listeners scores higher on integration with the backend and cost (fit 0.4 vs 4.8)."
+          },
+          {
+            "choice": "Pusher Channels",
+            "why_not": "Pusher Channels starts around $1,999/month against a $0/month total budget. Firestore realtime listeners scores higher on integration with the backend and cost (fit -0.7 vs 4.8)."
+          }
+        ],
+        "tradeoffs": [
+          "Adds a separate hyperscaler account next to the cloudflare platform",
+          "High vendor lock-in (proprietary APIs/data model) with lock-in tolerance 'medium'"
+        ],
+        "fit_score": 4.82,
+        "confidence": "high",
+        "kb_id": "firestore_rt",
+        "sources": [
+          "https://firebase.google.com/docs/firestore"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "choice": "Git-push deploys on Cloudflare",
+        "justification": "Chosen because Git push deploys with previews are built into the hosting; free tier fits budget.monthly_infra_usd=0; strong cost efficiency (5/5) with priorities.cost=3; strong time-to-market (5/5) with priorities.time_to_market=3.",
+        "driven_by": [
+          "team.has_devops",
+          "budget.monthly_infra_usd",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability"
+        ],
+        "alternatives": [
+          {
+            "choice": "GitHub Actions",
+            "why_not": "GitHub Actions starts around $200/month against a $0/month total budget. Git-push deploys on Cloudflare scores higher on integration with the hosting platform (fit 1.1 vs 6.4)."
+          },
+          {
+            "choice": "Azure Pipelines",
+            "why_not": "Azure Pipelines starts around $300/month against a $0/month total budget. Git-push deploys on Cloudflare scores higher on integration with the hosting platform and cost (fit -0.4 vs 6.4)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 6.42,
+        "confidence": "high",
+        "kb_id": "host_git_deploy",
+        "sources": [
+          "https://vercel.com/docs",
+          "https://docs.netlify.com/",
+          "https://developers.cloudflare.com/workers/static-assets/"
+        ]
+      },
+      {
+        "layer": "ci_cd",
+        "purpose": "mobile build and release",
+        "choice": "Expo EAS Build/Submit/Update",
+        "justification": "Chosen because native build pipeline for React Native (Expo); strong time-to-market (5/5) with priorities.time_to_market=3; strong cost efficiency (4/5) with priorities.cost=3; strong maintainability (4/5) with priorities.maintainability=3. Accepted trade-off: Expo EAS Build/Submit/Update starts around $300/month against a $0/month total budget.",
+        "driven_by": [
+          "project.platforms",
+          "budget.monthly_infra_usd",
+          "priorities.time_to_market",
+          "priorities.cost",
+          "priorities.maintainability",
+          "priorities.performance",
+          "priorities.scalability"
+        ],
+        "alternatives": [
+          {
+            "choice": "Codemagic",
+            "why_not": "Expo EAS Build/Submit/Update scores higher on integration with the frontend (fit -0.7 vs 2.3)."
+          },
+          {
+            "choice": "fastlane on GitHub Actions",
+            "why_not": "Expo EAS Build/Submit/Update scores higher on integration with the frontend and time-to-market (fit -0.7 vs 2.3)."
+          }
+        ],
+        "tradeoffs": [
+          "Expo EAS Build/Submit/Update starts around $300/month against a $0/month total budget"
+        ],
+        "fit_score": 2.27,
+        "confidence": "high",
+        "kb_id": "eas",
+        "sources": [
+          "https://docs.expo.dev/build/introduction/"
+        ]
+      },
+      {
+        "layer": "observability",
+        "choice": "Cloudflare analytics/logs",
+        "justification": "Chosen because the platform's built-in logs, metrics and log drains cover a small team; free tier fits budget.monthly_infra_usd=0; strong cost efficiency (5/5) with priorities.cost=3; strong time-to-market (5/5) with priorities.time_to_market=3.",
+        "driven_by": [
+          "requirements.availability",
+          "budget.monthly_infra_usd",
+          "priorities.cost",
+          "priorities.time_to_market",
+          "team.has_devops"
+        ],
+        "alternatives": [
+          {
+            "choice": "Sentry (errors + performance)",
+            "why_not": "Sentry (errors + performance) starts around $400/month against a $0/month total budget. Cloudflare analytics/logs scores higher on integration with the hosting platform and cost (fit 0.1 vs 4.5)."
+          },
+          {
+            "choice": "Prometheus + Grafana + Loki (self-hosted)",
+            "why_not": "Prometheus + Grafana + Loki (self-hosted) starts around $500/month against a $0/month total budget; needs ongoing operations work but team.has_devops=false (ops burden 3/5). Cloudflare analytics/logs scores higher on integration with the hosting platform (fit -2.6 vs 4.5)."
+          }
+        ],
+        "tradeoffs": [],
+        "fit_score": 4.52,
+        "confidence": "high",
+        "kb_id": "host_logs",
+        "sources": [
+          "https://vercel.com/docs",
+          "https://docs.netlify.com/",
+          "https://developers.cloudflare.com/workers/static-assets/"
+        ]
+      },
+      {
+        "layer": "other",
+        "purpose": "push notifications",
+        "choice": "Firebase Cloud Messaging (push)",
+        "justification": "Chosen because free tier fits budget.monthly_infra_usd=0; strong cost efficiency (5/5) with priorities.cost=3; strong scalability (5/5) with priorities.scalability=3; strong time-to-market (5/5) with priorities.time_to_market=3.",
+        "driven_by": [
+          "project.platforms",
+          "requirements.realtime",
+          "budget.monthly_infra_usd",
+          "priorities.cost",
+          "priorities.scalability",
+          "priorities.time_to_market",
+          "priorities.maintainability"
+        ],
+        "alternatives": [],
+        "tradeoffs": [
+          "Keep payloads free of personal data (delivery is global)"
+        ],
+        "fit_score": 4.27,
+        "confidence": "high",
+        "kb_id": "fcm",
+        "sources": [
+          "https://firebase.google.com/docs/cloud-messaging"
+        ]
+      }
+    ]
+  },
+  "estimated_monthly_cost_usd": {
+    "min": 23300,
+    "max": 44800,
+    "currency": "USD",
+    "assumptions": [
+      "Order-of-magnitude band from approximate public list prices (USD) in the knowledge base; not a quote",
+      "Sized for 5,000,000 users at 12 months, 250,000 peak concurrent users, ~37,500 req/s peak (scale tier: xlarge)",
+      "Data: ~6,000 GB in the database, ~14,000 GB of media, ~146,484 GB/month egress",
+      "Excludes taxes, developer salaries, domain names, app-store fees and one-off migration work"
+    ],
+    "breakdown": [
+      {
+        "component": "Cloudflare (Workers static assets / Pages)",
+        "min": 5.0,
+        "max": 500.0,
+        "basis": "xlarge tier (~37,500 req/s peak, 250,000 concurrent users)"
+      },
+      {
+        "component": "Cloud Firestore",
+        "min": 3625.4,
+        "max": 14990.0,
+        "basis": "xlarge tier instance; x1.5 for standby/replicas (availability 99.99%); +5,980 GB storage above 20 GB"
+      },
+      {
+        "component": "Google Cloud Tasks / Pub/Sub (us-central1 Iowa)",
+        "min": 150.0,
+        "max": 800.0,
+        "basis": "xlarge tier"
+      },
+      {
+        "component": "Firebase Authentication",
+        "min": 19057.5,
+        "max": 27225.0,
+        "basis": "5,000,000 MAU"
+      },
+      {
+        "component": "Cloudflare R2",
+        "min": 210.0,
+        "max": 210.0,
+        "basis": "14,000 GB stored, ~26,367 GB/month served"
+      },
+      {
+        "component": "Expo EAS Build/Submit/Update",
+        "min": 300.0,
+        "max": 1000.0,
+        "basis": "xlarge tier"
+      }
+    ]
+  },
+  "warnings": [
+    {
+      "code": "AVAILABILITY_TEAM_MISMATCH",
+      "severity": "critical",
+      "message": "availability=99.99 (~4.3 min downtime/month) needs multi-region failover and 24x7 on-call; a 1-person beginner team without DevOps cannot operate that.",
+      "fields": [
+        "requirements.availability",
+        "team.size",
+        "team.has_devops",
+        "team.experience"
+      ]
+    },
+    {
+      "code": "BUDGET_EXCEEDED",
+      "severity": "critical",
+      "message": "Estimated minimum $23,300/month exceeds budget.monthly_infra_usd=$0. Biggest drivers: Firebase Authentication (~$19,058), Cloud Firestore (~$3,625). The stack shown is already the cost-optimised plan.",
+      "fields": [
+        "budget.monthly_infra_usd"
+      ]
+    },
+    {
+      "code": "TIMELINE_INFEASIBLE",
+      "severity": "critical",
+      "message": "Scope (~13.5 feature points: 3 platform(s), social domain, requirements) far exceeds capacity (1 beginner engineer(s) x 4 weeks). Ship one platform first.",
+      "fields": [
+        "timeline.mvp_weeks",
+        "team.size",
+        "project.platforms"
+      ]
+    },
+    {
+      "code": "HIGH_SCALE_SMALL_TEAM",
+      "severity": "warning",
+      "message": "5,000,000 users with 1 engineer(s): only fully managed, autoscaling services are viable.",
+      "fields": [
+        "scale.users_12_months",
+        "team.size"
+      ]
+    },
+    {
+      "code": "MANY_PLATFORMS_SHORT_TIMELINE",
+      "severity": "warning",
+      "message": "3 client platforms in 4 weeks: cross-platform code sharing is assumed; consider launching on one platform first.",
+      "fields": [
+        "project.platforms",
+        "timeline.mvp_weeks"
+      ]
+    },
+    {
+      "code": "MULTI_REGION_REQUIRED",
+      "severity": "warning",
+      "message": "99.99% needs active-active or warm-standby in a second region; the stack is multi-zone in one region (~99.95%) plus cross-region replicas. Budget for the second region.",
+      "fields": [
+        "requirements.availability"
+      ]
+    },
+    {
+      "code": "REALTIME_SCALE",
+      "severity": "warning",
+      "message": "250,000 concurrent realtime connections: run a dedicated, horizontally scaled connection tier.",
+      "fields": [
+        "scale.peak_concurrent_users",
+        "requirements.realtime"
+      ]
+    },
+    {
+      "code": "VENDOR_LOCK_IN",
+      "severity": "info",
+      "message": "Cloud Firestore is proprietary; migrating away later means rewriting the data layer.",
+      "fields": [
+        "infrastructure.vendor_lock_in_tolerance"
+      ]
+    },
+    {
+      "code": "VENDOR_LOCK_IN",
+      "severity": "info",
+      "message": "Firebase (Firestore + Auth + Functions) is proprietary; migrating away later means rewriting the data layer.",
+      "fields": [
+        "infrastructure.vendor_lock_in_tolerance"
+      ]
+    }
+  ],
+  "assumptions": [
+    "No data_residency or user geography given; primary region defaults to US East (move it next to your users)",
+    "Budget re-plan attempted (cost weighted at 5) but no cheaper compliant plan exists",
+    "RELAXED budget.monthly_infra_usd: requirements as stated need at least ~$23,300/month; raise the budget or reduce scope (fewer platforms, lower availability, defer search/realtime features)",
+    "RELAXED requirements.availability: designed for ~99.95% on managed multi-zone services (provider SLAs) instead of self-operated 99.99% multi-region failover",
+    "RELAXED timeline.mvp_weeks: phase the MVP - first platform and core flow only; cross-platform frameworks were preferred to limit the number of codebases"
+  ],
+  "validation_errors": [],
+  "profile": {
+    "scale_tier": "xlarge",
+    "users_design_target": 5000000,
+    "peak_concurrent_users": 250000,
+    "peak_rps_estimate": 37500,
+    "data_gb": 20000.0,
+    "db_gb": 6000.0,
+    "media_gb": 14000.0,
+    "egress_gb_month": 146484.4,
+    "primary_region": "us",
+    "effective_residency": "none",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": true,
+    "feature_points": 13.5,
+    "team_capacity": 2.4,
+    "effort_ratio": 5.62,
+    "background_jobs": true,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": [
+      "chat"
+    ]
+  },
+  "llm_used": false,
+  "decision_trace": {
+    "frontend": [
+      {
+        "choice": "React + Vite (SPA)",
+        "score": 8.865,
+        "status": "selected",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 shares React/TypeScript skills and code with the React Native (Expo) app",
+          "+0.80 rich client-side interactivity for a social"
+        ]
+      },
+      {
+        "choice": "Vue + Vite (SPA)",
+        "score": 8.665,
+        "status": "candidate",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+0.80 gentle learning curve suits a beginner team on a 4-week timeline",
+          "+0.80 rich client-side interactivity for a social"
+        ]
+      },
+      {
+        "choice": "SvelteKit",
+        "score": 8.115,
+        "status": "candidate",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.80 gentle learning curve suits a beginner team on a 4-week timeline",
+          "+0.80 rich client-side interactivity for a social"
+        ]
+      },
+      {
+        "choice": "Next.js",
+        "score": 8.08,
+        "status": "candidate",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+1.00 shares React/TypeScript skills and code with the React Native (Expo) app",
+          "+0.80 rich client-side interactivity for a social",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Hugo",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive social",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Eleventy (11ty)",
+        "score": null,
+        "status": "excluded",
+        "reason": "static site generator cannot serve an interactive social",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Phaser",
+        "score": null,
+        "status": "excluded",
+        "reason": "game framework: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "React Native (Expo)",
+        "score": 9.265,
+        "status": "selected",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+1.40 one codebase ships both Android and iOS (project.platforms)",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.80 gentle learning curve suits a beginner team on a 4-week timeline"
+        ]
+      },
+      {
+        "choice": "Ionic + Capacitor",
+        "score": 8.87,
+        "status": "candidate",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+1.60 gentle learning curve suits a beginner team on a 4-week timeline",
+          "+1.40 one codebase ships both Android and iOS (project.platforms)",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Progressive Web App",
+        "score": 7.47,
+        "status": "candidate",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+1.60 gentle learning curve suits a beginner team on a 4-week timeline",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Flutter",
+        "score": 2.537,
+        "status": "candidate",
+        "top_factors": [
+          "-2.81 no dart in team.languages: ramp-up time and hiring risk",
+          "+1.40 one codebase ships both Android and iOS (project.platforms)",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Kotlin + Jetpack Compose (native Android)",
+        "score": null,
+        "status": "excluded",
+        "reason": "does not target ios (project.platforms)",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Swift + SwiftUI (native iOS)",
+        "score": null,
+        "status": "excluded",
+        "reason": "does not target android (project.platforms)",
+        "fields": [
+          "project.platforms"
+        ]
+      },
+      {
+        "choice": "Unity",
+        "score": null,
+        "status": "excluded",
+        "reason": "game engine: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "Godot",
+        "score": null,
+        "status": "excluded",
+        "reason": "game engine: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "backend": [
+      {
+        "choice": "Firebase (Firestore + Auth + Functions)",
+        "score": 9.22,
+        "status": "selected",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+1.60 gentle learning curve suits a beginner team on a 4-week timeline",
+          "-1.20 complex social workflows outgrow BaaS rules and edge functions",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "NestJS (Node.js LTS, TypeScript)",
+        "score": 8.47,
+        "status": "candidate",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+0.80 modules/DI give structure for a social domain",
+          "+0.60 same language as the web/mobile clients: shared types and validation code"
+        ]
+      },
+      {
+        "choice": "Fastify (Node.js LTS, TypeScript)",
+        "score": 8.07,
+        "status": "candidate",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+0.80 gentle learning curve suits a beginner team on a 4-week timeline",
+          "+0.60 same language as the web/mobile clients: shared types and validation code",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Supabase (managed Postgres + Auth + Storage + Realtime)",
+        "score": 7.72,
+        "status": "candidate",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "-1.20 complex social workflows outgrow BaaS rules and edge functions",
+          "+1.10 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Express (Node.js LTS)",
+        "score": 6.92,
+        "status": "candidate",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "+1.60 gentle learning curve suits a beginner team on a 4-week timeline",
+          "+0.60 same language as the web/mobile clients: shared types and validation code",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "Appwrite",
+        "score": 6.22,
+        "status": "candidate",
+        "top_factors": [
+          "+3.12 team already works in javascript (team.languages)",
+          "-1.20 complex social workflows outgrow BaaS rules and edge functions",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "+0.80 gentle learning curve suits a beginner team on a 4-week timeline"
+        ]
+      },
+      {
+        "choice": "Next.js full-stack (Route Handlers + Server Actions)",
+        "score": null,
+        "status": "excluded",
+        "reason": "only applies when the web frontend is Next.js",
+        "fields": [
+          "project.platforms"
+        ]
+      }
+    ],
+    "database": [
+      {
+        "choice": "Cloud Firestore",
+        "score": 8.85,
+        "status": "selected",
+        "top_factors": [
+          "+6.00 Firebase is built on Cloud Firestore",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong time-to-market (5/5) with priorities.time_to_market=3",
+          "-1.00 money/relational data needs multi-row ACID guarantees"
+        ]
+      },
+      {
+        "choice": "PostgreSQL",
+        "score": 0.2,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Firebase data model",
+          "+1.50 relational integrity and transactions for a social domain",
+          "+1.10 strong maintainability (5/5) with priorities.maintainability=3",
+          "+1.10 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "TimescaleDB (PostgreSQL extension)",
+        "score": -0.5,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Firebase data model",
+          "+1.50 relational integrity and transactions for a social domain",
+          "+1.10 strong performance (5/5) with priorities.performance=3",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3"
+        ]
+      },
+      {
+        "choice": "CockroachDB",
+        "score": -0.6,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Firebase data model",
+          "+1.50 relational integrity and transactions for a social domain",
+          "+1.10 strong scalability (5/5) with priorities.scalability=3",
+          "+1.10 strong security (5/5) with priorities.security=3"
+        ]
+      },
+      {
+        "choice": "MySQL",
+        "score": -0.9,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Firebase data model",
+          "+1.50 relational integrity and transactions for a social domain",
+          "+0.55 strong cost efficiency (4/5) with priorities.cost=3",
+          "+0.55 strong maintainability (4/5) with priorities.maintainability=3"
+        ]
+      },
+      {
+        "choice": "SQL Server (Azure SQL)",
+        "score": -2.25,
+        "status": "candidate",
+        "top_factors": [
+          "-6.00 would bypass the Firebase data model",
+          "+1.50 relational integrity and transactions for a social domain",
+          "+1.10 strong security (5/5) with priorities.security=3",
+          "-0.80 SQL Server licensing outside Azure SQL's managed tiers"
+        ]
+      },
+      {
+        "choice": "Google BigQuery",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "ClickHouse",
+        "score": null,
+        "status": "excluded",
+        "reason": "analytical (OLAP) store, not a transactional database",
+        "fields": [
+          "project.type"
+        ]
+      }
+    ],
+    "database_offering": [
+      {
+        "choice": "Cloud Firestore",
+        "score": -6.937,
+        "status": "selected",
+        "top_factors": [
+          "-3.50 Cloud Firestore starts around $2,250/month against a $0/month total budget",
+          "-2.74 ~$2,250+/month at the xlarge tier",
+          "-1.50 adds a hyperscaler account next to cloudflare hosting",
+          "+0.40 fully managed: no operations work for a team without DevOps"
+        ]
+      }
+    ],
+    "hosting": [
+      {
+        "choice": "Cloudflare (Workers static assets / Pages)",
+        "score": 6.33,
+        "status": "selected",
+        "top_factors": [
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 strong performance (5/5) with priorities.performance=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Google Cloud Run",
+        "score": 3.83,
+        "status": "candidate",
+        "top_factors": [
+          "-3.50 Google Cloud Run starts around $1,500/month against a $0/month total budget",
+          "+1.00 multi-zone redundancy for availability 99.99%",
+          "+1.00 strong cost efficiency (5/5) with priorities.cost=3",
+          "+1.00 strong scalability (5/5) with priorities.scalability=3"
+        ]
+      },
+      {
+        "choice": "Vercel",
+        "score": 3.13,
+        "status": "candidate",
+        "top_factors": [
+          "-3.50 Vercel starts around $1,500/month against a $0/month total budget",
+          "+1.60 gentle learning curve suits a beginner team on a 4-week timeline",
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong performance (5/5) with priorities.performance=3"
+        ]
+      },
+      {
+        "choice": "DigitalOcean App Platform",
+        "score": 2.63,
+        "status": "candidate",
+        "top_factors": [
+          "-3.50 DigitalOcean App Platform starts around $1,000/month against a $0/month total budget",
+          "+1.60 gentle learning curve suits a beginner team on a 4-week timeline",
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Firebase Hosting",
+        "score": 2.63,
+        "status": "candidate",
+        "top_factors": [
+          "-3.50 Firebase Hosting starts around $25/month against a $0/month total budget",
+          "+1.60 gentle learning curve suits a beginner team on a 4-week timeline",
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Netlify",
+        "score": 2.63,
+        "status": "candidate",
+        "top_factors": [
+          "-3.50 Netlify starts around $500/month against a $0/month total budget",
+          "+1.60 gentle learning curve suits a beginner team on a 4-week timeline",
+          "+1.00 serves the web frontend; the BaaS handles data and auth",
+          "+1.00 strong time-to-market (5/5) with priorities.time_to_market=3"
+        ]
+      },
+      {
+        "choice": "Amazon GameLift Servers",
+        "score": null,
+        "status": "excluded",
+        "reason": "dedicated game-server fleets: only for project.type=gaming",
+        "fields": [
+          "project.type"
+        ]
+      },
+      {
+        "choice": "On-premise Linux servers + Docker Compose",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud is not on-premise",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "On-premise Kubernetes (RKE2 / k3s)",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud is not on-premise",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      },
+      {
+        "choice": "Docker Compose on cloud VMs",
+        "score": null,
+        "status": "excluded",
+        "reason": "deployment_model=managed_cloud: self-managed VMs/databases are excluded in favour of managed services",
+        "fields": [
+          "infrastructure.deployment_model"
+        ]
+      }
+    ]
+  }
+}

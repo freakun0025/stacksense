@@ -1,0 +1,63 @@
+{
+  "scenario_id": "E15",
+  "engine_version": "1.0.0",
+  "kb_version": "2026.11 (as of 2026-11-13)",
+  "input_hash": "58be3d684c101e1c",
+  "status": "infeasible",
+  "summary": "The hard constraints contradict each other, so no compliant stack exists. See critical warnings and resolution_options.",
+  "architecture_style": "other",
+  "stack": null,
+  "estimated_monthly_cost_usd": {
+    "min": 0,
+    "max": 0,
+    "currency": "USD",
+    "assumptions": [
+      "Not estimated: constraints are infeasible"
+    ],
+    "breakdown": []
+  },
+  "warnings": [
+    {
+      "code": "CLOUD_DEPLOYMENT_CONFLICT",
+      "severity": "critical",
+      "message": "cloud_preference=none (no public cloud) contradicts deployment_model=managed_cloud, which runs on a public cloud.",
+      "fields": [
+        "infrastructure.cloud_preference",
+        "infrastructure.deployment_model"
+      ]
+    }
+  ],
+  "assumptions": [
+    "No data_residency or user geography given; primary region defaults to US East (move it next to your users)"
+  ],
+  "validation_errors": [],
+  "resolution_options": [
+    "Set deployment_model to 'on_premise' (or 'air_gapped')",
+    "Set cloud_preference to 'any' (or a specific provider)"
+  ],
+  "profile": {
+    "scale_tier": "tiny",
+    "users_design_target": 5000,
+    "peak_concurrent_users": 100,
+    "peak_rps_estimate": 15,
+    "data_gb": 10.0,
+    "db_gb": 10.0,
+    "media_gb": 0.0,
+    "egress_gb_month": 73.2,
+    "primary_region": "us",
+    "effective_residency": "none",
+    "needs_backend": true,
+    "static_eligible": false,
+    "complex_domain": false,
+    "feature_points": 3.5,
+    "team_capacity": 30.0,
+    "effort_ratio": 0.12,
+    "background_jobs": false,
+    "geospatial": false,
+    "ledger": false,
+    "low_end_devices": false,
+    "audit_trail": false,
+    "description_signals": []
+  },
+  "llm_used": false
+}
