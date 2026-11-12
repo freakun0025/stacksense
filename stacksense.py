@@ -18,6 +18,22 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+
+def _load_dotenv(path=os.path.join(HERE, ".env")):
+    """Minimal .env reader (KEY=VALUE lines). Real environment variables always win."""
+    if not os.path.isfile(path):
+        return
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+_load_dotenv()
+
 from stacksense_engine.recommend import recommend, to_json  # noqa: E402
 from stacksense_engine.validate import validate  # noqa: E402
 from stacksense_engine.describe import parse_description  # noqa: E402

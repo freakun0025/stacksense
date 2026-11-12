@@ -1,0 +1,4 @@
+# StackSense has NO required third-party dependencies: it runs on the Python 3.9+ standard library.
+#
+# Optional - only for the off-by-default AI description assistant (STACKSENSE_LLM=on):
+# anthropic>=1.0
