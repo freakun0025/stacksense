@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StackSense</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><rect x="3" y="18" width="26" height="6" rx="2" fill="var(--accent)"/><rect x="6" y="11" width="20" height="6" rx="2" fill="var(--accent-2)"/><rect x="9" y="4" width="14" height="6" rx="2" fill="var(--accent-3)"/></svg>
+    <div>
+      <div class="brand-name">StackSense</div>
+      <div class="brand-sub">Intelligent tech-stack recommendation engine</div>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="configure" role="tab">1. Configure</button>
+    <button class="tab" data-tab="result" role="tab">2. Recommendation</button>
+    <button class="tab" data-tab="kb" role="tab">Knowledge base</button>
+    <button class="tab" data-tab="about" role="tab">How it works</button>
+  </nav>
+  <div class="chips-right">
+    <span class="chip chip-ok" id="engine-chip" title="Stack selection is rule-based and deterministic">Deterministic engine</span>
+    <span class="chip" id="llm-chip">LLM: checking…</span>
+    <button class="chip" id="theme-toggle" title="Toggle light/dark theme" style="cursor:pointer">◐ Theme</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============================== CONFIGURE ============================== -->
+  <section id="tab-configure" class="tabpane active">
+    <div class="config-layout">
+      <div class="config-form" id="form-root"></div>
+      <aside class="config-side">
+        <div class="card sticky">
+          <h3>Scenario</h3>
+          <label class="lbl" for="scenario-select">Load a sample</label>
+          <select id="scenario-select"><option value="">— choose —</option></select>
+          <div class="btn-row">
+            <label class="btn btn-ghost" for="file-input">Import JSON…</label>
+            <input type="file" id="file-input" accept=".json,application/json" hidden>
+            <button class="btn btn-ghost" id="btn-export-input">Export input</button>
+            <button class="btn btn-ghost" id="btn-reset">Reset</button>
+          </div>
+          <label class="lbl" for="scenario-id">scenario_id</label>
+          <input id="scenario-id" type="text" placeholder="e.g. MY1">
+          <label class="check"><input type="checkbox" id="lenient"> Lenient mode (fill missing required fields with documented defaults)</label>
+          <button class="btn btn-primary btn-big" id="btn-run">Recommend stack →</button>
+          <div id="validation-box" class="validation"></div>
+        </div>
+        <div class="card">
+          <h3>Description assistant</h3>
+          <p class="muted small">Reads <code>project.description</code> with a deterministic phrase lexicon and suggests structured values. Nothing changes until you click <em>Apply</em>.</p>
+          <div class="btn-row">
+            <button class="btn" id="btn-suggest">Suggest from description</button>
+            <button class="btn btn-ghost" id="btn-suggest-ai" hidden>Suggest with AI</button>
+          </div>
+          <div id="suggest-box"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============================== RESULT ============================== -->
+  <section id="tab-result" class="tabpane">
+    <div id="result-empty" class="empty">
+      <h2>No recommendation yet</h2>
+      <p>Load a sample scenario or fill the form, then press <strong>Recommend stack</strong>.</p>
+    </div>
+    <div id="result-root" hidden></div>
+  </section>
+
+  <!-- ============================== KB ============================== -->
+  <section id="tab-kb" class="tabpane">
+    <div class="card">
+      <div class="kb-head">
+        <div>
+          <h2>Knowledge base</h2>
+          <p class="muted" id="kb-meta">Loading…</p>
+        </div>
+        <div class="kb-filters">
+          <input id="kb-search" type="search" placeholder="Search technologies, traits, regions…">
+          <select id="kb-layer"><option value="">All layers</option></select>
+          <label class="check"><input type="checkbox" id="kb-inactive"> show deprecated / EOL</label>
+        </div>
+      </div>
+      <div class="table-wrap"><table class="kb-table" id="kb-table"></table></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Lifecycle registry (end-of-life &amp; deprecations)</h3>
+        <p class="muted small">Scanned against <code>infrastructure.existing_systems</code> and the description.</p>
+        <div class="table-wrap"><table class="kb-table" id="life-table"></table></div>
+      </div>
+      <div class="card">
+        <h3>Sources</h3>
+        <div class="sources-list" id="sources-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== ABOUT ============================== -->
+  <section id="tab-about" class="tabpane">
+    <div class="card prose">
+      <h2>How StackSense decides</h2>
+      <div class="pipeline">
+        <div class="step"><b>1 Validate</b><span>types, ranges, enums, required fields; defaults recorded as assumptions</span></div>
+        <div class="step"><b>2 Profile</b><span>scale tier, concurrency, req/s, data, effort vs capacity, region, description signals</span></div>
+        <div class="step"><b>3 Pre-flight</b><span>contradictory hard constraints → <code>infeasible</code>; impossible requirements relaxed with critical warnings</span></div>
+        <div class="step"><b>4 Filter</b><span>hard constraints exclude candidates: residency, compliance, deployment model, cloud preference, lifecycle</span></div>
+        <div class="step"><b>5 Score</b><span>weighted factors: priorities × KB scores, skills, learning curve, ops burden, scale fit, budget fit, requirement fit</span></div>
+        <div class="step"><b>6 Cost &amp; re-plan</b><span>tiered cost model; if the floor exceeds budget, re-plan with cost weighted at 5</span></div>
+        <div class="step"><b>7 Explain</b><span>justification, driven_by, why-not alternatives, trade-offs, warnings, decision trace</span></div>
+      </div>
+      <h3>Guarantees</h3>
+      <ul>
+        <li><b>Deterministic:</b> no clock, randomness or network in the engine; ties break on maturity then id. Same input → byte-identical JSON (see <code>input_hash</code>).</li>
+        <li><b>LLM-free decisions:</b> the stack is chosen only by rules and weighted scoring over a curated, cited knowledge base. The optional AI button only suggests form values; it is off by default (<code>STACKSENSE_LLM=off</code>).</li>
+        <li><b>Hard constraints are never violated silently:</b> violating candidates are excluded with a reason that appears in the alternatives and decision trace.</li>
+        <li><b>Explainable:</b> every point of every score is a recorded factor tied to input fields.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<div id="toast" class="toast" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>
