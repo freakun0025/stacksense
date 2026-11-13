@@ -98,9 +98,9 @@ def run_tests():
 
 
 # ----------------------------------------------------------------------------------- LaTeX helpers
-UNI = {"→": r"$\rightarrow$", "≥": r"$\geq$", "≤": r"$\leq$", "≈": r"$\approx$", "×": r"$\times$",
-       "−": "-", "—": "---", "–": "--", "₹": "Rs.", "…": r"\dots{}", "✔": "pass", "✘": "fail", "↔": r"$\leftrightarrow$",
-       "’": "'", "“": "``", "”": "''"}
+UNI = {"â†’": r"$\rightarrow$", "â‰¥": r"$\geq$", "â‰¤": r"$\leq$", "â‰ˆ": r"$\approx$", "Ã—": r"$\times$",
+       "âˆ’": "-", "â€”": "---", "â€“": "--", "â‚¹": "Rs.", "â€¦": r"\dots{}", "âœ”": "pass", "âœ˜": "fail", "â†”": r"$\leftrightarrow$",
+       "â€™": "'", "â€œ": "``", "â€": "''"}
 
 
 def L(s):
@@ -130,6 +130,17 @@ def fig(name, width, caption, label, pos="htbp"):
             f"\\caption{{{caption}}}\\label{{fig:{label}}}\n\\end{{figure}}\n")
 
 
+def figgrid(items):
+    rows = []
+    for i in range(0, len(items), 2):
+        cells = []
+        for name, cap, lab in items[i:i + 2]:
+            cells.append(f"\\begin{{minipage}}[t]{{0.485\\linewidth}}\\centering\\includegraphics[width=\\linewidth]{{img/{name}.png}}"
+                         f"\\caption{{{cap}}}\\label{{fig:{lab}}}\\end{{minipage}}")
+        rows.append("\\hfill\n".join(cells))
+    return "\\begin{figure}[htbp]\n\\centering\n" + "\n\\par\\vspace{6pt}\n".join(rows) + "\n\\end{figure}\n"
+
+
 def figpair(a, ca, la, b, cb, lb):
     return ("\\begin{figure}[htbp]\n\\centering\n"
             f"\\begin{{minipage}}[t]{{0.485\\linewidth}}\\centering\\includegraphics[width=\\linewidth]{{img/{a}.png}}"
@@ -141,21 +152,57 @@ def figpair(a, ca, la, b, cb, lb):
 # ----------------------------------------------------------------------------------- document parts
 PREAMBLE = r"""\documentclass[11pt,a4paper]{article}
 \usepackage{fontspec}
-\usepackage[top=2.2cm,bottom=2.4cm,left=2.3cm,right=2.3cm]{geometry}
-\usepackage{graphicx,booktabs,tabularx,longtable,array,multicol,xcolor,microtype}
-\usepackage[font=small,labelfont=bf]{caption}
+\usepackage[top=2.5cm,bottom=2.4cm,left=2.05cm,right=2.05cm,headsep=0.7cm]{geometry}
+\usepackage[table]{xcolor}
+\usepackage{graphicx,booktabs,tabularx,longtable,array,multicol,microtype}
+\usepackage{amsmath,amssymb}
 \usepackage{enumitem}
-\usepackage{amsmath}
 \usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta}
-\usepackage[hidelinks]{hyperref}
+\usetikzlibrary{positioning,arrows.meta,shadows}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
 \usepackage{url}
 \usepackage{lastpage}
-\setlist{leftmargin=1.4em,itemsep=2pt}
-\setlength{\parskip}{3pt}
-\renewcommand{\arraystretch}{1.12}
+\usepackage[section]{placeins}
+\definecolor{accent}{HTML}{1F4E79}
+\definecolor{accent2}{HTML}{0F766E}
+\definecolor{accent3}{HTML}{C2410C}
+\definecolor{accent4}{HTML}{7C3AED}
+\definecolor{soft}{HTML}{DCE8F5}
+\definecolor{soft2}{HTML}{E3F4F1}
+\definecolor{rowalt}{HTML}{F3F7FB}
+\usepackage[font=small,labelfont={bf,color=accent}]{caption}
+\hypersetup{colorlinks=true,linkcolor=accent,citecolor=accent2,urlcolor=accent2}
+\titleformat{\section}{\Large\bfseries\color{accent}}
+  {\tikz[baseline=(n.base)]\node[fill=accent,text=white,rounded corners=2pt,inner sep=3pt,minimum width=1.5em](n){\thesection};}
+  {0.6em}{}[\vspace{-4pt}{\color{accent!35}\titlerule[1pt]}]
+\titlespacing*{\section}{0pt}{20pt}{11pt}
+\titleformat{\subsection}{\large\bfseries\color{accent2}}{\thesubsection}{0.7em}{}
+\titlespacing*{\subsection}{0pt}{14pt}{7pt}
+\titleformat{\paragraph}[runin]{\normalsize\bfseries\color{accent2}}{}{0pt}{}
+\titlespacing*{\paragraph}{0pt}{9pt}{0.6em}
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrule}{{\color{accent!60}\hrule height 0.7pt}}
+\fancyhead[L]{\small\color{accent}\textbf{StackSense Challenge}\enspace{\color{gray}|\enspace Synergy '26}}
+\fancyhead[R]{\small\color{gray}Kunal Mittal (IMT2023533)}
+\fancyfoot[C]{\small\color{accent}\textbf{\thepage}}
+\setlist{leftmargin=1.6em,itemsep=4pt,topsep=5pt}
+\setlist[itemize]{label=\textcolor{accent2}{\scriptsize$\blacktriangleright$}}
+\setlist[enumerate]{label=\textcolor{accent}{\bfseries\arabic*.}}
+\setlength{\parskip}{5pt}
+\linespread{1.05}
+\renewcommand{\arraystretch}{1.3}
+\setlength{\aboverulesep}{0pt}\setlength{\belowrulesep}{0pt}
+\arrayrulecolor{accent!70}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newtcolorbox{keybox}[1][]{enhanced,colback=soft2,colframe=accent2,boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=5pt,bottom=5pt,fonttitle=\bfseries,coltitle=white,colbacktitle=accent2,#1}
+\newtcolorbox{notebox}[1][]{enhanced,colback=soft,colframe=accent,boxrule=0.6pt,arc=2pt,left=8pt,right=8pt,top=5pt,bottom=5pt,fonttitle=\bfseries,coltitle=white,colbacktitle=accent,#1}
+\newcommand{\stat}[3]{\begin{tcolorbox}[enhanced,colback=#3!8,colframe=#3,boxrule=0.6pt,arc=3pt,halign=center,valign=center,height=1.85cm,left=2pt,right=2pt]{\Large\bfseries\color{#3}#1}\\[1pt]{\scriptsize\color{black!75}#2}\end{tcolorbox}}
+\renewcommand{\topfraction}{0.9}\renewcommand{\bottomfraction}{0.8}\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}\setcounter{totalnumber}{4}\setcounter{topnumber}{3}
 \setcounter{tocdepth}{1}
 \urlstyle{same}
 \begin{document}
@@ -165,33 +212,42 @@ PREAMBLE = r"""\documentclass[11pt,a4paper]{article}
 def title_page():
     a = AUTHOR
     return T(r"""\begin{titlepage}
-\centering
-\vspace*{1.5cm}
-{\large Synergy '26 \quad Online Systems-Design Challenge\par}
-\vspace{1.2cm}
-{\LARGE\bfseries StackSense Challenge\par}
-\vspace{0.4cm}
-{\Large An Explainable, Deterministic Tech Stack Recommendation Engine\par}
-\vspace{0.4cm}
-{\large Project Report\par}
-\vspace{1.4cm}
-\begin{tabular}{@{}lp{10.5cm}@{}}
-\toprule
+\begin{tikzpicture}[remember picture,overlay]
+\fill[accent] (current page.north west) rectangle ([yshift=-7.2cm]current page.north east);
+\fill[accent2] ([yshift=-7.2cm]current page.north west) rectangle ([yshift=-7.5cm]current page.north east);
+\fill[accent3] ([yshift=-7.5cm]current page.north west) rectangle ([yshift=-7.62cm]current page.north east);
+\node[anchor=north west,text=white,font=\large\scshape] at ([xshift=2.1cm,yshift=-1.6cm]current page.north west)
+  {Synergy '26 \enspace\textbullet\enspace Online Systems-Design Challenge};
+\node[anchor=north west,text=white,font=\fontsize{30}{36}\selectfont\bfseries] at ([xshift=2.1cm,yshift=-2.6cm]current page.north west)
+  {StackSense Challenge};
+\node[anchor=north west,text=white!85!accent,font=\Large,text width=16cm] at ([xshift=2.1cm,yshift=-4.25cm]current page.north west)
+  {An Explainable, Deterministic Tech Stack Recommendation Engine};
+\node[anchor=north west,text=white!80!accent,font=\large\itshape] at ([xshift=2.1cm,yshift=-5.55cm]current page.north west)
+  {Project Report};
+\end{tikzpicture}
+\vspace*{6.6cm}
+
+\begin{tcolorbox}[enhanced,colback=rowalt,colframe=accent,boxrule=0.6pt,arc=3pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
+\renewcommand{\arraystretch}{1.45}
+\begin{tabular}{@{}>{\bfseries\color{accent}}l@{\hspace{1.2em}}p{11.2cm}@{}}
 Name & @@name@@ (@@roll@@)\\
 College & @@college@@\\
-Unstop registered email & \texttt{@@email@@}\\
+Unstop email & \texttt{@@email@@}\\
 GitHub & \url{@@github@@}\\
 Date & @@date@@\\
-\bottomrule
 \end{tabular}
-\vspace{1.4cm}
+\end{tcolorbox}
+\vspace{0.5cm}
 
-\begin{minipage}{0.82\linewidth}
+\begin{tcolorbox}[enhanced,colback=white,colframe=accent2!70,boxrule=0.6pt,arc=3pt,left=10pt,right=10pt,top=4pt,bottom=4pt,
+  title=Contents,fonttitle=\bfseries,colbacktitle=accent2,coltitle=white]
 \small
+\renewcommand{\contentsname}{}
+\makeatletter\renewcommand{\section}{\@ifstar{\@gobble}{\@gobble}}\makeatother
 \tableofcontents
-\end{minipage}
+\end{tcolorbox}
 \vfill
-{\footnotesize All screenshots were captured from the running engine; all figures and numbers in this report are
+{\footnotesize\color{gray}All screenshots were captured from the running engine; all figures and numbers in this report are
 generated from the engine, its outputs and its test suites by \texttt{report/build\_report.py}.\par}
 \end{titlepage}
 \setcounter{page}{1}
@@ -210,6 +266,14 @@ remove candidates outright, while budget, timeline and priorities are traded off
 re-plan when the cost floor exceeds the budget. Each component is returned with a justification tied to input fields,
 rejected alternatives, trade-offs, a monthly cost band and graded warnings. The engine runs on the Python standard library,
 answers in milliseconds, and was validated with @@tests@@ unit tests, @@fuzz@@ randomised scenarios and a perturbation study.
+
+\vspace{4pt}
+\begin{tcbraster}[raster columns=4,raster equal height,raster column skip=6pt]
+\stat{@@total@@}{technologies and managed offerings}{accent}
+\stat{@@src@@}{cited sources in the knowledge base}{accent2}
+\stat{0}{hard-constraint violations in @@fuzz@@ random scenarios}{accent3}
+\stat{6\,/\,6}{public scenarios within the acceptable set}{accent4}
+\end{tcbraster}
 """, total=st["total"], life=st["lifecycle_entries"], src=st["sources"], tests=st["tests"], fuzz=f"{st['fuzz_n']:,}")
 
 
@@ -260,19 +324,19 @@ def s3():
     return r"""\section{System architecture}
 \begin{figure}[htbp]
 \centering
-\begin{tikzpicture}[node distance=4mm, box/.style={draw, rounded corners=1pt, align=center, font=\footnotesize,
+\begin{tikzpicture}[node distance=4mm, box/.style={draw=accent, fill=soft, rounded corners=3pt, align=center, font=\footnotesize, drop shadow={opacity=0.15},
   minimum height=11mm, text width=19mm, inner sep=2pt}, >=Stealth]
-\node[box] (in) {Scenario\\JSON / form};
+\node[box, fill=accent3!12, draw=accent3] (in) {Scenario\\JSON / form};
 \node[box, right=of in] (v) {Validate\\\scriptsize types, defaults};
 \node[box, right=of v] (p) {Profile\\\scriptsize tier, load, region};
 \node[box, right=of p] (pf) {Pre-flight\\\scriptsize infeasible?};
 \node[box, right=of pf] (s) {Select\\\scriptsize filter + score};
 \node[box, below=7mm of s] (c) {Cost\\\scriptsize band, re-plan};
 \node[box, left=of c] (e) {Explain\\\scriptsize warnings, trace};
-\node[box, left=of e] (o) {Output JSON\\UI / file};
-\node[box, left=of o, dashed] (k) {Knowledge\\base};
-\draw[->] (in) -- (v); \draw[->] (v) -- (p); \draw[->] (p) -- (pf); \draw[->] (pf) -- (s);
-\draw[->] (s) -- (c); \draw[->] (c) -- (e); \draw[->] (e) -- (o);
+\node[box, left=of e, fill=accent3!12, draw=accent3] (o) {Output JSON\\UI / file};
+\node[box, left=of o, dashed, draw=accent2, fill=soft2] (k) {Knowledge\\base};
+\begin{scope}[accent, thick]\draw[->] (in) -- (v); \draw[->] (v) -- (p); \draw[->] (p) -- (pf); \draw[->] (pf) -- (s);
+\draw[->] (s) -- (c); \draw[->] (c) -- (e); \draw[->] (e) -- (o);\end{scope}
 \draw[->, dashed] (k.north) |- ([yshift=-3mm]s.south west) -- ([yshift=-3mm]s.south west);
 \end{tikzpicture}
 \caption{Processing pipeline. Every stage is deterministic; the knowledge base is read-only data.}
@@ -293,9 +357,9 @@ generated from the factors recorded during scoring. Table~\ref{tab:modules} list
 \begin{table}[htbp]
 \centering\small
 \caption{Modules of the engine (package \texttt{stacksense\_engine}).}\label{tab:modules}
-\begin{tabularx}{\linewidth}{@{}P{4.6cm}Y@{}}
+\rowcolors{2}{white}{rowalt}\begin{tabularx}{\linewidth}{@{}P{4.6cm}Y@{}}
 \toprule
-Module & Responsibility\\
+\rowcolor{soft}\textcolor{accent}{\textbf{Module}} & \textcolor{accent}{\textbf{Responsibility}}\\
 \midrule
 """ + body + r"""
 \bottomrule
@@ -337,15 +401,15 @@ The engine accepts every field of Section~3.1 of the brief with exactly the spec
 schema module drives validation, the input form and Table~\ref{tab:inputs}, which states for each field why it matters
 architecturally, which decisions it influences and how it is validated.
 
-{\footnotesize
-\begin{longtable}{@{}P{3.7cm}P{6.3cm}P{2.6cm}P{2.6cm}@{}}
+{\footnotesize\renewcommand{\arraystretch}{1.16}
+\rowcolors{2}{white}{rowalt}\begin{longtable}{@{}P{3.7cm}P{6.3cm}P{2.6cm}P{2.6cm}@{}}
 \caption{Mandatory input fields.}\label{tab:inputs}\\
 \toprule
-Field & Architectural role & Affects & Validation\\
+\rowcolor{soft}\textcolor{accent}{\textbf{Field}} & \textcolor{accent}{\textbf{Architectural role}} & \textcolor{accent}{\textbf{Affects}} & \textcolor{accent}{\textbf{Validation}}\\
 \midrule
 \endfirsthead
 \toprule
-Field & Architectural role & Affects & Validation\\
+\rowcolor{soft}\textcolor{accent}{\textbf{Field}} & \textcolor{accent}{\textbf{Architectural role}} & \textcolor{accent}{\textbf{Affects}} & \textcolor{accent}{\textbf{Validation}}\\
 \midrule
 \endhead
 \bottomrule
@@ -360,15 +424,15 @@ a low lock-in tolerance moves proprietary platforms such as Firebase, DynamoDB a
 existing cloud credits favour hosting on that cloud; the users' geography places the primary region next to them when
 no residency is given; and a recovery point objective below five minutes rejects offerings without point-in-time recovery.
 
-{\footnotesize
-\begin{longtable}{@{}P{4.6cm}P{8.0cm}P{2.6cm}@{}}
+{\footnotesize\renewcommand{\arraystretch}{1.16}
+\rowcolors{2}{white}{rowalt}\begin{longtable}{@{}P{4.6cm}P{8.0cm}P{2.6cm}@{}}
 \caption{Additional input parameters.}\label{tab:extras}\\
 \toprule
-Field & What it captures & Affects\\
+\rowcolor{soft}\textcolor{accent}{\textbf{Field}} & \textcolor{accent}{\textbf{What it captures}} & \textcolor{accent}{\textbf{Affects}}\\
 \midrule
 \endfirsthead
 \toprule
-Field & What it captures & Affects\\
+\rowcolor{soft}\textcolor{accent}{\textbf{Field}} & \textcolor{accent}{\textbf{What it captures}} & \textcolor{accent}{\textbf{Affects}}\\
 \midrule
 \endhead
 \bottomrule
@@ -397,7 +461,7 @@ Thresholds in the engine come from documented platform behaviour. Amazon RDS off
 connections at 60 minutes and offers only best-effort affinity~\cite{cloudrun_ws}, which matters for stateful rooms;
 PostgreSQL full-text search~\cite{pg_fts} is preferred over a dedicated search cluster below the large scale tier; and
 an effort model (feature points against team-weeks scaled by experience) flags unrealistic timelines.
-""" + fig("configure", "0.78", "Input form of the web UI. Each field shows its schema path, help text and the decisions it affects; validation runs live.", "configure")
+""" + fig("configure", "0.62", "Input form of the web UI. Each field shows its schema path, help text and the decisions it affects; validation runs live.", "configure")
 
 
 def s5(st):
@@ -427,9 +491,9 @@ several Indian ISPs in February 2026~\cite{supabase_block}. Table~\ref{tab:kb} s
 \centering\small
 \begin{minipage}[t]{0.36\linewidth}\centering
 \caption{Knowledge base.}\label{tab:kb}
-\begin{tabular}{@{}lr@{}}
+\rowcolors{2}{white}{rowalt}\begin{tabular}{@{}lr@{}}
 \toprule
-Category & Entries\\
+\rowcolor{soft}\textcolor{accent}{\textbf{Category}} & \textcolor{accent}{\textbf{Entries}}\\
 \midrule
 """ + kb_tab + r"""
 \bottomrule
@@ -461,10 +525,12 @@ infrastructure; \texttt{none} means no public cloud.
 \subsection{Soft constraints and scoring}
 The remaining candidates are scored as a sum of explicit factors. Each factor stores the input fields that caused it,
 its weight and a sentence, which later become the justification and the \texttt{driven\_by} list:
+\begin{keybox}[title=Scoring model]
 \begin{equation*}
 \mathrm{score}(c) = \sum_{d \in D} w\,\frac{p_d}{3}\,(s_{c,d}-3) + F_{\mathrm{skill}} + F_{\mathrm{learn}} + F_{\mathrm{ops}}
  + F_{\mathrm{scale}} + F_{\mathrm{lock}} + F_{\mathrm{reuse}} + F_{\mathrm{budget}} + F_{\mathrm{req}},
 \end{equation*}
+\end{keybox}
 where $D$ are the six priority dimensions, $p_d$ the user's priority and $s_{c,d}$ the knowledge-base score. The skill
 factor rewards a full language match and partially rewards a close one (TypeScript and JavaScript, Kotlin and Java);
 its weight is larger for beginners than for senior teams and grows for short timelines. Without a DevOps engineer,
@@ -484,10 +550,12 @@ randomness, network, unordered iteration or language model) and is checked by te
 processes, shuffled key order and both settings of the LLM switch.
 
 \subsection{Use of language models}
+\begin{notebox}[title=LLM policy]
 No language model chooses or ranks any component. The only LLM feature is an optional button that suggests form values
 from the description, which is permitted use (1) of Section~5.1 of the brief. It is off by default
 (\texttt{STACKSENSE\_LLM=off}), can be forced off with \texttt{-{}-no-llm}, is shown as ``LLM: off'' in the UI, and is never
 imported by the engine; every output contains \texttt{"llm\_used": false}.
+\end{notebox}
 """
 
 
@@ -509,17 +577,20 @@ Table~\ref{tab:results} summarises the engine's output for the six public scenar
 \begin{table}[htbp]
 \centering\scriptsize
 \caption{Recommendations for the public scenarios.}\label{tab:results}
-\begin{tabularx}{\linewidth}{@{}lP{1.6cm}YYYYr@{}}
+\rowcolors{2}{white}{rowalt}\begin{tabularx}{\linewidth}{@{}lP{1.6cm}YYYYr@{}}
 \toprule
- & Style & Frontend & Backend & Database & Hosting & Cost / month\\
+\rowcolor{soft} & \textcolor{accent}{\textbf{Style}} & \textcolor{accent}{\textbf{Frontend}} & \textcolor{accent}{\textbf{Backend}} & \textcolor{accent}{\textbf{Database}} & \textcolor{accent}{\textbf{Hosting}} & \textcolor{accent}{\textbf{Cost / month}}\\
 \midrule
 """ + "\n".join(rows) + r"""
 \bottomrule
 \end{tabularx}
 \end{table}
-""" + figpair("P1_overview", "P1: static Astro site on a free CDN.", "p1", "P2_overview", "P2: India-resident marketplace.", "p2") \
-        + figpair("P3_overview", "P3: hybrid architecture in the EU.", "p3", "P4_overview", "P4: RBI/PCI fintech on AWS Mumbai.", "p4") \
-        + figpair("P5_overview", "P5: .NET monolith on Azure India.", "p5", "P6_overview", "P6: offline-first Android on a BaaS.", "p6") \
+""" + figgrid([("P1_overview", "P1: static Astro site on a free CDN.", "p1"),
+                     ("P2_overview", "P2: India-resident marketplace.", "p2"),
+                     ("P3_overview", "P3: hybrid architecture in the EU.", "p3"),
+                     ("P4_overview", "P4: RBI/PCI fintech on AWS Mumbai.", "p4"),
+                     ("P5_overview", "P5: .NET monolith on Azure India.", "p5"),
+                     ("P6_overview", "P6: offline-first Android on a BaaS.", "p6")]) \
         + T(r"""
 \subsection{P2: Home-services marketplace (India)}
 The residency requirement (India) and the DPDP Act~\cite{dpdp} removed every candidate without an Indian region before
@@ -540,7 +611,6 @@ roughly double that line item. One-time passwords are sent through MSG91 with DL
 (Twilio is excluded by residency). The estimate of \$@@c2min@@--@@c2max@@ per month keeps the floor within the \$150
 budget, and the upper end is flagged.
 """, c2min=c2["min"], c2max=c2["max"]) \
-        + fig("P2_core", "0.8", "Core stack for P2, with justifications, the input fields that drove each choice, rejected alternatives (including hard-constraint exclusions) and trade-offs.", "p2core") \
         + T(r"""
 \subsection{P4: Digital lending and payments (India)}
 The AWS preference, RBI localisation~\cite{rbi}, PCI DSS~\cite{pci}, DPDP and ISO 27001 together with Indian
@@ -577,15 +647,15 @@ def s7():
 Table~\ref{tab:edges} covers each category of Section~6 of the brief; the scenarios are in \texttt{scenarios/edge/} and
 their outputs in \texttt{outputs/edge/}. Further screenshots are in Appendix~\ref{app:shots}.
 
-{\footnotesize
-\begin{longtable}{@{}P{2.3cm}P{5.1cm}P{7.8cm}@{}}
+{\footnotesize\renewcommand{\arraystretch}{1.16}
+\rowcolors{2}{white}{rowalt}\begin{longtable}{@{}P{2.3cm}P{5.1cm}P{7.8cm}@{}}
 \caption{Edge-case categories, detection and behaviour.}\label{tab:edges}\\
 \toprule
-Category & Detection & Behaviour (scenario)\\
+\rowcolor{soft}\textcolor{accent}{\textbf{Category}} & \textcolor{accent}{\textbf{Detection}} & \textcolor{accent}{\textbf{Behaviour (scenario)}}\\
 \midrule
 \endfirsthead
 \toprule
-Category & Detection & Behaviour (scenario)\\
+\rowcolor{soft}\textcolor{accent}{\textbf{Category}} & \textcolor{accent}{\textbf{Detection}} & \textcolor{accent}{\textbf{Behaviour (scenario)}}\\
 \midrule
 \endhead
 \bottomrule
@@ -613,9 +683,9 @@ automatically; @@passed@@ of 6 scenarios pass (Table~\ref{tab:rubric}).
 \begin{table}[htbp]
 \centering\small
 \caption{Rubric check of the public scenarios.}\label{tab:rubric}
-\begin{tabular}{@{}llll@{}}
+\rowcolors{2}{white}{rowalt}\begin{tabular}{@{}llll@{}}
 \toprule
-Scenario & Result & Layers within the acceptable set & Clearly wrong choices\\
+\rowcolor{soft}\textcolor{accent}{\textbf{Scenario}} & \textcolor{accent}{\textbf{Result}} & \textcolor{accent}{\textbf{Layers within the acceptable set}} & \textcolor{accent}{\textbf{Clearly wrong choices}}\\
 \midrule
 @@rows@@
 \bottomrule
@@ -716,13 +786,12 @@ selecting any component.
 def appendices():
     pairs = [("E01_missing", "E01: missing required fields."), ("E05_notes", "E05: four platforms in three weeks."),
              ("E06_overview", "E06: high-traffic site kept static."), ("E11_notes", "E11: AWS preference with on-premise deployment."),
-             ("E20_notes", "E20: minimal file with documented defaults."), ("about", "How-it-works page of the UI.")]
+]
     wide = [("E02_invalid", "E02: 22 validation errors reported in one pass.", "0.78"),
             ("P5_notes", "P5: Entra ID, Microsoft 365 and on-premise SQL Server reused.", "0.8"),
             ("E08_core", "E08: HIPAA scenario with only BAA-covered services.", "0.74"),
             ("E12_core", "E12: team skills weighed against popular choices.", "0.74"),
             ("P2_trace", "P2: decision trace with scores, top factors and exclusions.", "0.8"),
-            ("P2_cost", "P2: cost breakdown and assumptions.", "0.72"),
             ("P2_core", "P2: core stack with justifications, driving input fields, rejected alternatives and trade-offs.", "0.8"),
             ("P4_support", "P4: supporting services under AWS, RBI, PCI DSS, DPDP and ISO 27001.", "0.74")]
     out = [r"\clearpage", r"\appendix", r"\section{Additional screenshots}\label{app:shots}\label{sec:appstart}"]
@@ -735,9 +804,9 @@ def appendices():
     items = "\n".join(f"\\item {L(s['title'])}: \\url{{{s['url']}}}" for s in srcs)
     out.append(r"""\clearpage
 \section{Knowledge-base sources}\label{app:sources}
-{\scriptsize
+{\scriptsize\setlength{\parskip}{0pt}\linespread{1.0}\selectfont
 \begin{multicols}{2}
-\begin{enumerate}[leftmargin=2.2em,itemsep=0pt]
+\begin{enumerate}[leftmargin=2.2em,itemsep=1pt,parsep=0pt,topsep=0pt,label=\textcolor{accent}{\arabic*.}]
 """ + items + r"""
 \end{enumerate}
 \end{multicols}}
